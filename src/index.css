@@ -41,37 +41,37 @@
   }
 
   .dark {
-    /* Midnight Prism Dark */
-    --background: 260 30% 8%;
-    /* Deep Violet Black */
+    /* Deep Blue Void Dark */
+    --background: 222 47% 11%;
+    /* Deep Blue/Grey */
     --foreground: 210 40% 98%;
 
-    --card: 260 30% 12%;
+    --card: 217 33% 17%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 260 30% 12%;
+    --popover: 217 33% 17%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 190 100% 50%;
-    /* Electric Cyan */
-    --primary-foreground: 260 30% 10%;
+    --primary: 217 91% 60%;
+    /* Electric Blue */
+    --primary-foreground: 222 47% 11%;
 
-    --secondary: 260 20% 18%;
+    --secondary: 217 19% 27%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 260 20% 18%;
-    --muted-foreground: 260 20% 65%;
+    --muted: 217 19% 27%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 300 100% 50%;
-    /* Neon Magenta */
+    --accent: 199 89% 48%;
+    /* Sky Blue */
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 260 30% 20%;
-    --input: 260 30% 20%;
-    --ring: 190 100% 50%;
+    --border: 217 19% 27%;
+    --input: 217 19% 27%;
+    --ring: 217 91% 60%;
   }
 }
 
@@ -83,12 +83,12 @@
   body {
     @apply bg-background text-foreground font-sans antialiased selection:bg-primary/30 selection:text-primary;
     font-family: 'Inter', sans-serif;
-    /* Mesh Gradient Background */
+    /* Mesh Gradient Background - Blue/Grey/Black */
     background-image:
-      radial-gradient(at 0% 0%, hsla(280, 80%, 20%, 0.3) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(320, 80%, 20%, 0.3) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(190, 80%, 20%, 0.3) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsla(240, 80%, 20%, 0.3) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, hsla(222, 47%, 11%, 1) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(217, 91%, 60%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(199, 89%, 48%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(217, 33%, 17%, 0.5) 0px, transparent 50%);
     background-attachment: fixed;
   }
 
