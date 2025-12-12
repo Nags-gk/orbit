@@ -24,16 +24,18 @@ export default function Subscriptions() {
                 </p>
             </div>
 
-            <Card className="bg-primary text-primary-foreground">
+            <Card className="glass-card border-primary/20">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-lg font-medium opacity-90">
+                    <CardTitle className="text-lg font-medium text-muted-foreground">
                         Total Monthly Cost
                     </CardTitle>
-                    <DollarSign className="h-4 w-4 opacity-90" />
+                    <DollarSign className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-4xl font-bold">${totalMonthlyCost.toFixed(2)}</div>
-                    <p className="text-sm opacity-80 mt-1">
+                    <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent animate-gradient bg-[length:200%_auto]">
+                        ${totalMonthlyCost.toFixed(2)}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
                         Across {subscriptions.length} active subscriptions
                     </p>
                 </CardContent>
