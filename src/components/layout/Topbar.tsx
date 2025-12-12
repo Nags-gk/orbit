@@ -1,22 +1,7 @@
 
 import { Menu, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../../store/useStore';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { AddTransactionModal } from '../transactions/AddTransactionModal';
-
-interface TopbarProps {
-    onMenuClick: () => void;
-}
-
 export function Topbar({ onMenuClick }: TopbarProps) {
-    const { theme, toggleTheme } = useStore();
-
     return (
         <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-background/0 backdrop-blur-sm">
             <div className="flex items-center gap-4">
@@ -81,7 +66,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
                 <Link to="/profile" className="w-10 h-10 rounded-full p-[2px] cursor-pointer hover:scale-105 transition-transform bg-gradient-to-br from-primary via-accent to-primary animate-gradient bg-[length:200%_auto]">
                     <div className="w-full h-full rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/10">
-                        <span className="font-bold text-transparent bg-clip-text bg-gradient-to-br from-primary to-accent">NG</span>
+                        <span className="font-bold text-white">NG</span>
                     </div>
                 </Link>
             </div>
