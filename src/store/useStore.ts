@@ -11,7 +11,7 @@ interface AppState {
 }
 
 export const useStore = create<AppState>((set) => ({
-    theme: 'light',
+    theme: 'dark',
     toggleTheme: () => set((state) => {
         const newTheme = state.theme === 'light' ? 'dark' : 'light';
         if (typeof window !== 'undefined') {
