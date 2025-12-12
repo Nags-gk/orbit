@@ -42,7 +42,7 @@ export function AddTransactionModal() {
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Add Transaction</span>
+                    <span className="inline">Add Transaction</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
