@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { User, Mail, Shield, Bell, CreditCard, Settings, MapPin, Phone, Save, X } from 'lucide-react';
+import { User, Mail, Shield, Bell, CreditCard, Settings, Save, X } from 'lucide-react';
 
 export default function Profile() {
     const [isEditing, setIsEditing] = useState(false);

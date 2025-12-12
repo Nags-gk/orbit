@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Menu, Moon, Sun, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
