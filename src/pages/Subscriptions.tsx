@@ -32,7 +32,7 @@ export default function Subscriptions() {
                     <DollarSign className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent animate-gradient bg-[length:200%_auto]">
+                    <div className="text-4xl font-bold text-primary">
                         ${totalMonthlyCost.toFixed(2)}
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
