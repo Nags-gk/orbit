@@ -1,6 +1,18 @@
 
 import { Menu, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { AddTransactionModal } from '../transactions/AddTransactionModal';
+
+interface TopbarProps {
+    onMenuClick: () => void;
+}
+
 export function Topbar({ onMenuClick }: TopbarProps) {
     return (
         <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-background/0 backdrop-blur-sm">
