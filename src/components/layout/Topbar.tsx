@@ -1,5 +1,5 @@
 
-import { Menu, Moon, Sun, Bell } from 'lucide-react';
+import { Menu, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import {
@@ -77,13 +77,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <button
-                    onClick={toggleTheme}
-                    className="p-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Toggle theme"
-                >
-                    {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                </button>
+
 
                 <Link to="/profile" className="w-10 h-10 rounded-full p-[2px] cursor-pointer hover:scale-105 transition-transform bg-gradient-to-br from-primary via-accent to-primary animate-gradient bg-[length:200%_auto]">
                     <div className="w-full h-full rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/10">
