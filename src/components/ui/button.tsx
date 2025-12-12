@@ -14,7 +14,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         const Comp = asChild ? Slot : "button"
 
         const variants = {
-            default: "bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90 shadow-[0_0_20px_rgba(var(--primary),0.4)] hover:shadow-[0_0_30px_rgba(var(--accent),0.5)] transition-all duration-300 border-none",
+            default: "bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 shadow-[0_0_20px_rgba(var(--primary),0.4)] hover:shadow-[0_0_30px_rgba(var(--accent),0.5)] transition-all duration-300 border-none",
             destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[0_0_15px_rgba(var(--destructive),0.3)]",
             outline: "border border-primary/30 bg-transparent hover:bg-primary/10 hover:border-primary/60 text-primary shadow-[0_0_10px_rgba(var(--primary),0.1)]",
             secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
