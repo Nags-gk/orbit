@@ -1,0 +1,186 @@
+"""
+REST router for transactions and subscriptions.
+Used by the frontend directly, separate from the AI chat pipeline.
+"""
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from ..database import get_db
+from ..models import Transaction, Subscription, User, TransactionType, TransactionCategory
+from ..services.security import get_current_user
+from datetime import datetime, date
+from dateutil.relativedelta import relativedelta
+from sqlalchemy import func
+from pydantic import BaseModel
+from fastapi import HTTPException
+
+class TransactionCreate(BaseModel):
+    description: str
+    amount: float
+    category: str
+    type: str
+    date: date
+
+router = APIRouter(prefix="/api", tags=["data"])
+
+
+@router.get("/transactions")
+async def list_transactions(
+    db: AsyncSession = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Transaction)
+        .where(Transaction.user_id == current_user.id)
+        .order_by(Transaction.date.desc())
+        .limit(100)
+    )
+    return [tx.to_dict() for tx in result.scalars().all()]
+
+@router.post("/transactions")
+async def create_transaction(
+    tx_data: TransactionCreate,
+    db: AsyncSession = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        tx_type_enum = TransactionType(tx_data.type)
+        # Handle string checking for mapped Enums
+        try:
+            tx_cat_enum = getattr(TransactionCategory, tx_data.category)
+        except AttributeError:
+            tx_cat_enum = TransactionCategory(tx_data.category)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid transaction type or category")
+
+    new_tx = Transaction(
+        user_id=current_user.id,
+        description=tx_data.description,
+        amount=tx_data.amount,
+        category=tx_cat_enum,
+        type=tx_type_enum,
+        date=tx_data.date
+    )
+    db.add(new_tx)
+    await db.commit()
+    await db.refresh(new_tx)
+    return new_tx.to_dict()
+
+@router.put("/transactions/{transaction_id}")
+async def update_transaction(
+    transaction_id: str,
+    tx_data: TransactionCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Transaction)
+        .where(Transaction.id == transaction_id)
+        .where(Transaction.user_id == current_user.id)
+    )
+    tx = result.scalars().first()
+    
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    try:
+        tx_type_enum = TransactionType(tx_data.type)
+        try:
+            tx_cat_enum = getattr(TransactionCategory, tx_data.category)
+        except AttributeError:
+            tx_cat_enum = TransactionCategory(tx_data.category)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid transaction type or category")
+
+    tx.description = tx_data.description
+    tx.amount = tx_data.amount
+    tx.category = tx_cat_enum
+    tx.type = tx_type_enum
+    tx.date = tx_data.date
+
+    await db.commit()
+    await db.refresh(tx)
+    return tx.to_dict()
+
+@router.delete("/transactions/{transaction_id}")
+async def delete_transaction(
+    transaction_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Transaction)
+        .where(Transaction.id == transaction_id)
+        .where(Transaction.user_id == current_user.id)
+    )
+    tx = result.scalars().first()
+    
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+        
+    await db.delete(tx)
+    await db.commit()
+    return {"message": "Transaction deleted successfully"}
+
+@router.get("/subscriptions")
+async def list_subscriptions(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Subscription)
+        .where(Subscription.user_id == current_user.id)
+        .order_by(Subscription.name)
+    )
+    return [s.to_dict() for s in result.scalars().all()]
+
+@router.get("/summary")
+async def get_summary(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Total Balance: Income - Expenses (all time)
+    # Better approach for a banking app would be to sum all transactions.
+    income_result = await db.execute(
+        select(func.sum(Transaction.amount))
+        .where(Transaction.user_id == current_user.id)
+        .where(Transaction.type == TransactionType.income)
+    )
+    total_income = income_result.scalar() or 0.0
+
+    expense_result = await db.execute(
+        select(func.sum(Transaction.amount))
+        .where(Transaction.user_id == current_user.id)
+        .where(Transaction.type == TransactionType.expense)
+    )
+    total_expenses = expense_result.scalar() or 0.0
+    
+    total_balance = total_income - total_expenses
+
+    # Monthly Spending: Expenses in the current month
+    now = datetime.now()
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    monthly_spending_result = await db.execute(
+        select(func.sum(Transaction.amount))
+        .where(Transaction.user_id == current_user.id)
+        .where(Transaction.type == TransactionType.expense)
+        .where(Transaction.date >= start_of_month.date())
+    )
+    monthly_spending = monthly_spending_result.scalar() or 0.0
+
+    # Active Subscriptions
+    subs_result = await db.execute(
+        select(func.count(Subscription.id))
+        .where(Subscription.user_id == current_user.id)
+        .where(Subscription.active == True)
+    )
+    active_subscriptions = subs_result.scalar() or 0
+
+    return {
+        "totalBalance": total_balance,
+        "monthlySpending": monthly_spending,
+        "activeSubscriptions": active_subscriptions,
+        "savingsGoal": 5000.0, # This can be wired up to BudgetGoal later
+    }
+
