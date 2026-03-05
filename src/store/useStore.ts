@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { MOCK_TRANSACTIONS, MOCK_SUBSCRIPTIONS, type Transaction, type Subscription } from '../lib/mockData';
-import { type ThemeVariable, THEME_PRESETS, type ThemeTokens } from '../lib/themes';
+import { type ThemeVariable, type ThemeTokens } from '../lib/themes';
 
 interface AppState {
     themeId: string;
