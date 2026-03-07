@@ -17,7 +17,8 @@ export function DocumentUploader() {
     } = useDocumentAI();
 
     const handleFile = useCallback((file: File) => {
-        if (file.type !== 'application/pdf') {
+        // Accept PDFs, Images (PNG/JPG), and CSV/Excel
+        if (!file.type.match(/(pdf|image\/|text\/csv|spreadsheetml)/)) {
             return;
         }
         uploadDocument(file);
@@ -130,7 +131,7 @@ export function DocumentUploader() {
             <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf"
+                accept=".pdf,.png,.jpg,.jpeg,.csv,.xlsx"
                 onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) handleFile(file);
@@ -141,7 +142,7 @@ export function DocumentUploader() {
             {isUploading ? (
                 <div className="flex flex-col items-center gap-2">
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                    <p className="text-sm text-muted-foreground">Processing PDF...</p>
+                    <p className="text-sm text-muted-foreground">Uploading for AI Analysis...</p>
                 </div>
             ) : (
                 <div className="flex flex-col items-center gap-2">
@@ -150,9 +151,9 @@ export function DocumentUploader() {
                         isDragOver ? "text-primary" : "text-muted-foreground/50"
                     )} />
                     <div>
-                        <p className="text-sm font-medium text-foreground">Upload Bank Statement</p>
+                        <p className="text-sm font-medium text-foreground">Upload Document</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                            Drop a PDF or click to browse • Max 10MB
+                            PDF, Image, Excel, or CSV • Max 20MB
                         </p>
                     </div>
                 </div>
