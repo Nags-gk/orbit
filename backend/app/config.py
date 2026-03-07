@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     # Anthropic API
     anthropic_api_key: str = ""
 
+    # Gemini API
+    gemini_api_key: str = ""
+
     # Database — defaults to local SQLite
     database_url: str = "sqlite+aiosqlite:///./orbit.db"
 
