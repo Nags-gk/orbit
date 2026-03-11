@@ -1,6 +1,4 @@
 <h1 align="center">
-  <img src="https://img.icons8.com/nolan/256/1A6DFF/C822FF/planet.png" alt="Orbit Logo" width="80" height="80">
-  <br>
   Orbit - Intelligent Financial Tracker
 </h1>
 
