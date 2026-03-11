@@ -100,3 +100,33 @@ async def update_me(user_update: UserUpdate, current_user: User = Depends(get_cu
     await db.commit()
     await db.refresh(current_user)
     return current_user.to_dict()
+
+import os
+import uuid
+import shutil
+from fastapi import UploadFile, File
+
+@router.post("/me/profile-picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # Ensure uploads directory exists
+    os.makedirs("uploads/profiles", exist_ok=True)
+    
+    # Generate unique filename
+    ext = file.filename.split(".")[-1]
+    filename = f"{uuid.uuid4()}.{ext}"
+    filepath = f"uploads/profiles/{filename}"
+    
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    # Assume FastAPI is serving out of /uploads
+    current_user.profile_picture_url = f"/uploads/profiles/{filename}"
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    
+    return current_user.to_dict()

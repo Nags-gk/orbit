@@ -6,6 +6,12 @@ export interface DashboardSummary {
     monthlySpending: number;
     activeSubscriptions: number;
     savingsGoal: number;
+    accountsInfo?: {
+        depository: number;
+        credit: number;
+        investment: number;
+        loan: number;
+    };
 }
 
 interface UseDashboardStatsReturn {

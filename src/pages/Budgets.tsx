@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Target, Plus, Trash2, RefreshCw, TrendingUp } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { apiFetch } from '../lib/api';
+import { AnimatedPage, StaggerContainer, StaggerItem, FadeInView } from '../components/ui/AnimatedComponents';
+import { EmptyState } from '../components/ui/EmptyState';
 
 interface Budget {
     id: string;
@@ -64,129 +66,135 @@ export default function Budgets() {
     const overallPct = totalLimit > 0 ? Math.min(100, Math.round((totalSpent / totalLimit) * 100)) : 0;
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30">
-                        <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Budget Goals</h1>
-                        <p className="text-muted-foreground">
-                            Set spending limits and track your progress
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setShowAdd(!showAdd)}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add Goal
-                    </button>
-                    <button
-                        onClick={fetchData}
-                        disabled={isLoading}
-                        className="p-2.5 rounded-xl hover:bg-foreground/10 text-muted-foreground hover:text-foreground transition-colors border border-border"
-                    >
-                        <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Overall Progress */}
-            {budgets.length > 0 && (
-                <div className="rounded-xl border border-border bg-foreground/5 p-5">
-                    <div className="flex items-center justify-between mb-3">
+        <AnimatedPage>
+            <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30">
+                            <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                        </div>
                         <div>
-                            <p className="text-sm text-muted-foreground">Overall Budget Usage</p>
-                            <p className="text-2xl font-bold text-foreground">
-                                ${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                <span className="text-sm font-normal text-muted-foreground ml-2">
-                                    of ${totalLimit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                </span>
+                            <h1 className="text-3xl font-bold tracking-tight">Budget Goals</h1>
+                            <p className="text-muted-foreground">
+                                Set spending limits and track your progress
                             </p>
                         </div>
-                        <span className={cn(
-                            "text-2xl font-bold",
-                            overallPct < 60 ? 'text-emerald-600 dark:text-emerald-400' : overallPct < 85 ? 'text-amber-400' : 'text-red-600 dark:text-red-400'
-                        )}>
-                            {overallPct}%
-                        </span>
                     </div>
-                    <div className="h-3 rounded-full bg-foreground/10 overflow-hidden">
-                        <div
-                            className={cn(
-                                "h-full rounded-full transition-all duration-700",
-                                overallPct < 60 ? 'bg-emerald-500' : overallPct < 85 ? 'bg-amber-500' : 'bg-red-500'
-                            )}
-                            style={{ width: `${overallPct}%` }}
-                        />
-                    </div>
-                </div>
-            )}
-
-            {/* Add Budget Form */}
-            {showAdd && (
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-                    <h3 className="text-sm font-semibold text-foreground mb-3">New Budget Goal</h3>
-                    <div className="flex items-end gap-3">
-                        <div className="flex-1">
-                            <label className="text-xs text-muted-foreground mb-1 block">Category</label>
-                            <select
-                                value={newCategory}
-                                onChange={e => setNewCategory(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground"
-                            >
-                                <option value="">Select category</option>
-                                {availableCategories.map(c => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="flex-1">
-                            <label className="text-xs text-muted-foreground mb-1 block">Monthly Limit ($)</label>
-                            <input
-                                type="number"
-                                value={newLimit}
-                                onChange={e => setNewLimit(e.target.value)}
-                                placeholder="500"
-                                className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground placeholder:text-muted-foreground"
-                            />
-                        </div>
+                    <div className="flex items-center gap-2">
                         <button
-                            onClick={handleAdd}
-                            disabled={!newCategory || !newLimit}
-                            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            onClick={() => setShowAdd(!showAdd)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
                         >
-                            Create
+                            <Plus className="w-4 h-4" />
+                            Add Goal
+                        </button>
+                        <button
+                            onClick={fetchData}
+                            disabled={isLoading}
+                            className="p-2.5 rounded-xl hover:bg-foreground/10 text-muted-foreground hover:text-foreground transition-colors border border-border"
+                        >
+                            <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
                         </button>
                     </div>
                 </div>
-            )}
 
-            {/* Budget Cards */}
-            {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                </div>
-            ) : budgets.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <Target className="w-12 h-12 text-muted-foreground/30 mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-1">No budget goals yet</h3>
-                    <p className="text-sm text-muted-foreground max-w-[300px]">
-                        Set spending limits for your categories to track how you're doing each month.
-                    </p>
-                </div>
-            ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                    {budgets.map(b => (
-                        <BudgetCard key={b.id} budget={b} onDelete={handleDelete} />
-                    ))}
-                </div>
-            )}
-        </div>
+                {/* Overall Progress */}
+                {budgets.length > 0 && (
+                    <FadeInView>
+                        <div className="rounded-xl border border-border bg-foreground/5 p-5">
+                            <div className="flex items-center justify-between mb-3">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Overall Budget Usage</p>
+                                    <p className="text-2xl font-bold text-foreground">
+                                        ${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        <span className="text-sm font-normal text-muted-foreground ml-2">
+                                            of ${totalLimit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </p>
+                                </div>
+                                <span className={cn(
+                                    "text-2xl font-bold",
+                                    overallPct < 60 ? 'text-emerald-600 dark:text-emerald-400' : overallPct < 85 ? 'text-amber-400' : 'text-red-600 dark:text-red-400'
+                                )}>
+                                    {overallPct}%
+                                </span>
+                            </div>
+                            <div className="h-3 rounded-full bg-foreground/10 overflow-hidden">
+                                <div
+                                    className={cn(
+                                        "h-full rounded-full transition-all duration-700",
+                                        overallPct < 60 ? 'bg-emerald-500' : overallPct < 85 ? 'bg-amber-500' : 'bg-red-500'
+                                    )}
+                                    style={{ width: `${overallPct}%` }}
+                                />
+                            </div>
+                        </div>
+                    </FadeInView>
+                )}
+
+                {/* Add Budget Form */}
+                {showAdd && (
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                        <h3 className="text-sm font-semibold text-foreground mb-3">New Budget Goal</h3>
+                        <div className="flex items-end gap-3">
+                            <div className="flex-1">
+                                <label className="text-xs text-muted-foreground mb-1 block">Category</label>
+                                <select
+                                    value={newCategory}
+                                    onChange={e => setNewCategory(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground"
+                                >
+                                    <option value="">Select category</option>
+                                    {availableCategories.map(c => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <label className="text-xs text-muted-foreground mb-1 block">Monthly Limit ($)</label>
+                                <input
+                                    type="number"
+                                    value={newLimit}
+                                    onChange={e => setNewLimit(e.target.value)}
+                                    placeholder="500"
+                                    className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground placeholder:text-muted-foreground"
+                                />
+                            </div>
+                            <button
+                                onClick={handleAdd}
+                                disabled={!newCategory || !newLimit}
+                                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            >
+                                Create
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Budget Cards */}
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    </div>
+                ) : budgets.length === 0 ? (
+                    <EmptyState
+                        icon="budgets"
+                        title="No budget goals yet"
+                        description="Set spending limits for your categories to track how you're doing each month. Stay in control of your finances!"
+                        actionLabel="Add Budget Goal"
+                        onAction={() => setShowAdd(true)}
+                    />
+                ) : (
+                    <StaggerContainer className="grid gap-4 md:grid-cols-2">
+                        {budgets.map(b => (
+                            <StaggerItem key={b.id}>
+                                <BudgetCard budget={b} onDelete={handleDelete} />
+                            </StaggerItem>
+                        ))}
+                    </StaggerContainer>
+                )}
+            </div>
+        </AnimatedPage>
     );
 }
 

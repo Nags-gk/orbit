@@ -17,6 +17,12 @@ class TransactionType(str, enum.Enum):
     income = "income"
     expense = "expense"
 
+class AccountType(str, enum.Enum):
+    depository = "depository"   # Checking, Savings
+    credit = "credit"           # Credit Cards
+    investment = "investment"   # Stocks, 401k, Crypto
+    loan = "loan"               # Mortgages, Auto Loans
+
 
 class TransactionCategory(str, enum.Enum):
     Food = "Food"
@@ -49,6 +55,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
     full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    profile_picture_url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     transactions: Mapped[List["Transaction"]] = relationship(back_populates="user", cascade="all, delete-orphan")
@@ -56,12 +63,17 @@ class User(Base):
     conversations: Mapped[List["Conversation"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     budget_goals: Mapped[List["BudgetGoal"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     documents: Mapped[List["Document"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    accounts: Mapped[List["Account"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    recurring_bills: Mapped[List["RecurringBill"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    net_worth_snapshots: Mapped[List["NetWorthSnapshot"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    savings_goals: Mapped[List["SavingsGoal"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
     def to_dict(self) -> dict:
         return {
             "id": self.id,
             "email": self.email,
             "fullName": self.full_name,
+            "profilePictureUrl": self.profile_picture_url,
         }
 
 
@@ -70,6 +82,7 @@ class Transaction(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    account_id: Mapped[Optional[str]] = mapped_column(ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True)
     date: Mapped[date] = mapped_column(Date, default=date.today)
     description: Mapped[str] = mapped_column(String(255))
     category: Mapped[TransactionCategory] = mapped_column(SAEnum(TransactionCategory))
@@ -78,15 +91,44 @@ class Transaction(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship(back_populates="transactions")
+    account: Mapped[Optional["Account"]] = relationship(back_populates="transactions")
 
     def to_dict(self) -> dict:
         return {
             "id": self.id,
+            "accountId": self.account_id,
             "date": self.date.isoformat(),
             "description": self.description,
             "category": self.category.value,
             "amount": self.amount,
             "type": self.type.value,
+        }
+
+class Account(Base):
+    __tablename__ = "accounts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(255))
+    type: Mapped[AccountType] = mapped_column(SAEnum(AccountType))
+    subtype: Mapped[str] = mapped_column(String(100)) # e.g. "Checking", "401k", "Credit Card", "Stock"
+    balance: Mapped[float] = mapped_column(Float)
+    currency: Mapped[str] = mapped_column(String(10), default="USD")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user: Mapped["User"] = relationship(back_populates="accounts")
+    transactions: Mapped[List["Transaction"]] = relationship(back_populates="account")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "type": self.type.value,
+            "subtype": self.subtype,
+            "balance": self.balance,
+            "currency": self.currency,
+            "updatedAt": self.updated_at.isoformat(),
         }
 
 
@@ -188,5 +230,80 @@ class Document(Base):
             "id": self.id,
             "filename": self.filename,
             "createdAt": self.created_at.isoformat(),
+        }
+
+
+class RecurringBill(Base):
+    __tablename__ = "recurring_bills"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(255))
+    amount: Mapped[float] = mapped_column(Float)
+    frequency: Mapped[str] = mapped_column(String(50), default="monthly")  # monthly, weekly, biweekly, yearly
+    next_due_date: Mapped[date] = mapped_column(Date)
+    category: Mapped[str] = mapped_column(String(100), default="Subscription")
+    auto_detected: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    user: Mapped["User"] = relationship(back_populates="recurring_bills")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "amount": self.amount,
+            "frequency": self.frequency,
+            "nextDueDate": self.next_due_date.isoformat(),
+            "category": self.category,
+            "autoDetected": self.auto_detected,
+        }
+
+
+class NetWorthSnapshot(Base):
+    __tablename__ = "net_worth_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    date: Mapped[date] = mapped_column(Date, default=date.today)
+    total_assets: Mapped[float] = mapped_column(Float, default=0.0)
+    total_liabilities: Mapped[float] = mapped_column(Float, default=0.0)
+    net_worth: Mapped[float] = mapped_column(Float, default=0.0)
+
+    user: Mapped["User"] = relationship(back_populates="net_worth_snapshots")
+
+    def to_dict(self) -> dict:
+        return {
+            "date": self.date.isoformat(),
+            "totalAssets": self.total_assets,
+            "totalLiabilities": self.total_liabilities,
+            "netWorth": self.net_worth,
+        }
+
+
+class SavingsGoal(Base):
+    __tablename__ = "savings_goals"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(255))
+    target_amount: Mapped[float] = mapped_column(Float)
+    current_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    deadline: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    icon: Mapped[str] = mapped_column(String(50), default="piggy-bank")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    user: Mapped["User"] = relationship(back_populates="savings_goals")
+
+    def to_dict(self) -> dict:
+        progress = (self.current_amount / self.target_amount * 100) if self.target_amount > 0 else 0
+        return {
+            "id": self.id,
+            "name": self.name,
+            "targetAmount": self.target_amount,
+            "currentAmount": self.current_amount,
+            "deadline": self.deadline.isoformat() if self.deadline else None,
+            "icon": self.icon,
+            "progress": round(min(progress, 100), 1),
         }
 

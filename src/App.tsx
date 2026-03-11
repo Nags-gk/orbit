@@ -6,8 +6,11 @@ import Transactions from './pages/Transactions';
 import Subscriptions from './pages/Subscriptions';
 import Intelligence from './pages/Intelligence';
 import Budgets from './pages/Budgets';
+import BillCalendar from './pages/BillCalendar';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
+import DocumentCompare from './components/documents/DocumentCompare';
+import Reports from './pages/Reports';
 
 import { useAuthStore } from './store/authStore';
 import { Navigate, useLocation } from 'react-router-dom';
@@ -41,7 +44,10 @@ function App() {
             <Route path="subscriptions" element={<Subscriptions />} />
             <Route path="intelligence" element={<Intelligence />} />
             <Route path="budgets" element={<Budgets />} />
+            <Route path="bills" element={<BillCalendar />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="compare" element={<DocumentCompare />} />
+            <Route path="reports" element={<Reports />} />
           </Route>
         </Routes>
       </BrowserRouter>

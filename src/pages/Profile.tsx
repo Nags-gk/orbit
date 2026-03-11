@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { User, Mail, Shield, Bell, CreditCard, Settings, Save, X, LogOut, Palette, RefreshCcw } from 'lucide-react';
+import { User, Mail, Shield, Bell, CreditCard, Settings, Save, X, LogOut, Palette, RefreshCcw, Camera, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +15,9 @@ export default function Profile() {
     const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [showAdvancedTheme, setShowAdvancedTheme] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [profile, setProfile] = useState({
         name: user?.fullName || 'Orbit User',
         email: user?.email || '',
@@ -47,10 +49,41 @@ export default function Profile() {
         }
     };
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const updatedUser = await apiFetch('/auth/me/profile-picture', {
+                method: 'POST',
+                body: formData
+            });
+            updateUser(updatedUser);
+        } catch (error) {
+            console.error("Failed to upload profile picture", error);
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
     const handleCancel = () => {
         setIsEditing(false);
         // Reset to original values if needed, but for now we'll just exit edit mode
         // To properly implement cancel, we'd need a separate "originalProfile" state
+    };
+
+    // Helper to get full URL for profile picture
+    const getProfilePictureUrl = () => {
+        if (!user?.profilePictureUrl) return null;
+        if (user.profilePictureUrl.startsWith('http')) return user.profilePictureUrl;
+        return `${window.location.protocol}//${window.location.hostname}:5173${user.profilePictureUrl}`; // Proxy via dev server
     };
 
     return (
@@ -65,12 +98,40 @@ export default function Profile() {
             <div className="grid gap-6 md:grid-cols-[1fr_2fr]">
                 <Card className="h-fit border-none bg-card/40 backdrop-blur-sm">
                     <CardContent className="pt-6 flex flex-col items-center text-center">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent p-[3px] mb-4">
-                            <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-                                <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-primary to-accent">
-                                    {profile.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                                </span>
+                        <div className="relative group w-24 h-24 mb-4">
+                            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary to-accent p-[3px] shadow-[0_0_20px_rgba(var(--primary),0.3)]">
+                                <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
+                                    {getProfilePictureUrl() ? (
+                                        <img src={getProfilePictureUrl()!} alt="Profile" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-primary to-accent">
+                                            {profile.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
+
+                            {/* Hidden file input */}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                            />
+
+                            {/* Upload Overlay */}
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-2 border-primary/50"
+                            >
+                                {isUploading ? (
+                                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                ) : (
+                                    <Camera className="w-6 h-6 text-white" />
+                                )}
+                            </button>
                         </div>
                         <h2 className="text-2xl font-bold">{profile.name}</h2>
                         <p className="text-muted-foreground">Premium Member</p>
@@ -228,8 +289,8 @@ export default function Profile() {
                                             key={preset.id}
                                             onClick={() => setTheme(preset.id)}
                                             className={`flex flex-col items-start p-3 rounded-xl border transition-all duration-300 text-left ${themeId === preset.id
-                                                    ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(var(--primary),0.2)]'
-                                                    : 'border-border hover:border-border/80 bg-black/20 hover:bg-black/40'
+                                                ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(var(--primary),0.2)]'
+                                                : 'border-border hover:border-border/80 bg-black/20 hover:bg-black/40'
                                                 }`}
                                         >
                                             <span className="font-semibold">{preset.name}</span>

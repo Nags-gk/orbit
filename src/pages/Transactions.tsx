@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, ArrowUpDown, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { apiFetch } from '../lib/api';
 import { EditTransactionModal } from '../components/transactions/EditTransactionModal';
+import { AnimatedPage, StaggerContainer, StaggerItem } from '../components/ui/AnimatedComponents';
+import { EmptyState } from '../components/ui/EmptyState';
 
 interface Transaction {
     id: number;
@@ -65,129 +68,151 @@ export default function Transactions() {
     const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex flex-col gap-2">
-                    <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
-                    <p className="text-muted-foreground">
-                        View and manage your transaction history.
-                    </p>
-                </div>
-                <button
-                    onClick={fetchData}
-                    disabled={isLoading}
-                    className="p-2.5 rounded-xl hover:bg-foreground/10 text-muted-foreground hover:text-foreground transition-colors border border-border"
-                >
-                    <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
-                </button>
-            </div>
-
-            {/* Summary */}
-            <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-xl border border-border bg-foreground/5 p-4">
-                    <p className="text-xs text-muted-foreground mb-1">Total Transactions</p>
-                    <p className="text-2xl font-bold text-foreground">{transactions.length}</p>
-                </div>
-                <div className="rounded-xl border border-emerald-500/30 dark:border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5 p-4">
-                    <div className="flex items-center gap-1 mb-1">
-                        <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                        <p className="text-xs text-muted-foreground">Income</p>
+        <AnimatedPage>
+            <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-2">
+                        <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
+                        <p className="text-muted-foreground">
+                            View and manage your transaction history.
+                        </p>
                     </div>
-                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <button
+                        onClick={fetchData}
+                        disabled={isLoading}
+                        className="p-2.5 rounded-xl hover:bg-foreground/10 text-muted-foreground hover:text-foreground transition-colors border border-border"
+                    >
+                        <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+                    </button>
                 </div>
-                <div className="rounded-xl border border-red-500/30 dark:border-red-500/20 bg-red-500/10 dark:bg-red-500/5 p-4">
-                    <div className="flex items-center gap-1 mb-1">
-                        <TrendingDown className="w-3 h-3 text-red-600 dark:text-red-400" />
-                        <p className="text-xs text-muted-foreground">Expenses</p>
-                    </div>
-                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                </div>
-            </div>
 
-            {/* Filters */}
-            <div className="flex items-center gap-3">
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                        type="text"
-                        placeholder="Search transactions..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 rounded-xl bg-foreground/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-colors"
-                    />
-                </div>
-                <select
-                    value={categoryFilter}
-                    onChange={e => setCategoryFilter(e.target.value)}
-                    className="px-3 py-2 rounded-xl bg-foreground/5 border border-border text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                >
-                    <option value="all">All Categories</option>
-                    {categories.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                    ))}
-                </select>
-            </div>
-
-            {/* Table */}
-            {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                </div>
-            ) : (
-                <div className="rounded-xl border border-border overflow-hidden">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b border-border bg-foreground/5">
-                                <th className="text-left px-4 py-3">
-                                    <button onClick={() => toggleSort('date')} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                                        Date
-                                        <ArrowUpDown className="w-3 h-3" />
-                                    </button>
-                                </th>
-                                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Description</th>
-                                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Category</th>
-                                <th className="text-right px-4 py-3">
-                                    <button onClick={() => toggleSort('amount')} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors ml-auto">
-                                        Amount
-                                        <ArrowUpDown className="w-3 h-3" />
-                                    </button>
-                                </th>
-                                <th className="px-4 py-3 w-16"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sorted.map(tx => (
-                                <tr key={tx.id} className="border-b border-border/50 hover:bg-foreground/5 transition-colors">
-                                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                                        {format(new Date(`${tx.date}T12:00:00`), 'd MMM yy')}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm font-medium text-foreground">{tx.description}</td>
-                                    <td className="px-4 py-3">
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-foreground/10 text-muted-foreground font-medium">
-                                            {tx.category}
-                                        </span>
-                                    </td>
-                                    <td className={cn(
-                                        "px-4 py-3 text-sm font-semibold text-right",
-                                        tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'
-                                    )}>
-                                        {tx.type === 'income' ? '+' : '-'}${tx.amount.toFixed(2)}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <EditTransactionModal transaction={tx} />
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-
-                    {sorted.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <p className="text-sm text-muted-foreground">No transactions found</p>
+                {/* Summary */}
+                <StaggerContainer className="grid gap-4 md:grid-cols-3">
+                    <StaggerItem>
+                        <div className="rounded-xl border border-border bg-foreground/5 p-4">
+                            <p className="text-xs text-muted-foreground mb-1">Total Transactions</p>
+                            <p className="text-2xl font-bold text-foreground">{transactions.length}</p>
                         </div>
-                    )}
+                    </StaggerItem>
+                    <StaggerItem>
+                        <div className="rounded-xl border border-emerald-500/30 dark:border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5 p-4">
+                            <div className="flex items-center gap-1 mb-1">
+                                <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                <p className="text-xs text-muted-foreground">Income</p>
+                            </div>
+                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                        </div>
+                    </StaggerItem>
+                    <StaggerItem>
+                        <div className="rounded-xl border border-red-500/30 dark:border-red-500/20 bg-red-500/10 dark:bg-red-500/5 p-4">
+                            <div className="flex items-center gap-1 mb-1">
+                                <TrendingDown className="w-3 h-3 text-red-600 dark:text-red-400" />
+                                <p className="text-xs text-muted-foreground">Expenses</p>
+                            </div>
+                            <p className="text-2xl font-bold text-red-600 dark:text-red-400">${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                        </div>
+                    </StaggerItem>
+                </StaggerContainer>
+
+                {/* Filters */}
+                <div className="flex items-center gap-3">
+                    <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <input
+                            type="text"
+                            placeholder="Search transactions..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="w-full pl-9 pr-3 py-2 rounded-xl bg-foreground/5 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-colors"
+                        />
+                    </div>
+                    <select
+                        value={categoryFilter}
+                        onChange={e => setCategoryFilter(e.target.value)}
+                        className="px-3 py-2 rounded-xl bg-foreground/5 border border-border text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    >
+                        <option value="all">All Categories</option>
+                        {categories.map(c => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
+                    </select>
                 </div>
-            )}
-        </div>
+
+                {/* Table */}
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    </div>
+                ) : transactions.length === 0 ? (
+                    <EmptyState
+                        icon="transactions"
+                        title="No transactions yet"
+                        description="Start by adding your first transaction. You can also upload bank statements to automatically import your history."
+                        actionLabel="Add Transaction"
+                    />
+                ) : (
+                    <div className="rounded-xl border border-border overflow-hidden">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b border-border bg-foreground/5">
+                                    <th className="text-left px-4 py-3">
+                                        <button onClick={() => toggleSort('date')} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                            Date
+                                            <ArrowUpDown className="w-3 h-3" />
+                                        </button>
+                                    </th>
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Description</th>
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Category</th>
+                                    <th className="text-right px-4 py-3">
+                                        <button onClick={() => toggleSort('amount')} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors ml-auto">
+                                            Amount
+                                            <ArrowUpDown className="w-3 h-3" />
+                                        </button>
+                                    </th>
+                                    <th className="px-4 py-3 w-16"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sorted.map((tx, index) => (
+                                    <motion.tr
+                                        key={tx.id}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: Math.min(index * 0.03, 0.5), duration: 0.3 }}
+                                        className="border-b border-border/50 hover:bg-foreground/5 transition-colors"
+                                    >
+                                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                                            {format(new Date(`${tx.date}T12:00:00`), 'd MMM yy')}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm font-medium text-foreground">{tx.description}</td>
+                                        <td className="px-4 py-3">
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-foreground/10 text-muted-foreground font-medium">
+                                                {tx.category}
+                                            </span>
+                                        </td>
+                                        <td className={cn(
+                                            "px-4 py-3 text-sm font-semibold text-right",
+                                            tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'
+                                        )}>
+                                            {tx.type === 'income' ? '+' : '-'}${tx.amount.toFixed(2)}
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <EditTransactionModal transaction={tx} />
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        {sorted.length === 0 && (
+                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <p className="text-sm text-muted-foreground">No transactions match your filters</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </AnimatedPage>
     );
 }
+

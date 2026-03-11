@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, Repeat, X, Brain, Target } from 'lucide-react';
+import { LayoutDashboard, CreditCard, Repeat, X, Brain, Target, CalendarDays, BarChart3, Download } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface SidebarProps {
@@ -13,7 +13,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         { to: '/transactions', icon: CreditCard, label: 'Transactions' },
         { to: '/subscriptions', icon: Repeat, label: 'Subscriptions' },
         { to: '/intelligence', icon: Brain, label: 'Intelligence' },
+        { to: '/bills', icon: CalendarDays, label: 'Bills' },
         { to: '/budgets', icon: Target, label: 'Budgets' },
+        { to: '/compare', icon: BarChart3, label: 'Compare Docs' },
+        { to: '/reports', icon: Download, label: 'Reports' },
     ];
 
     return (

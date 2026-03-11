@@ -9,6 +9,11 @@
     Static root and dark variables have been removed. Basic tokens are injected dynamically
     by the ThemeProvider in React. (See src/lib/themes.ts)
   */
+
+  /* Apply dark class default fallback */
+  :root {
+    --radius: 0.75rem;
+  }
 }
 
 @layer base {
@@ -21,13 +26,14 @@
     font-family: 'Inter', sans-serif;
   }
 
-  /* Mesh Gradient Background only for dark mode */
+  /* Mesh Gradient Background for dark mode — rich multi-color aurora effect */
   .dark body {
     background-image:
-      radial-gradient(at 0% 0%, hsla(260, 40%, 15%, 0.4) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(190, 80%, 15%, 0.3) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(300, 80%, 15%, 0.2) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsla(240, 80%, 15%, 0.3) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, hsla(260, 40%, 15%, 0.6) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(190, 80%, 15%, 0.5) 0px, transparent 50%),
+      radial-gradient(at 100% 50%, hsla(300, 80%, 15%, 0.3) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, hsla(240, 80%, 15%, 0.4) 0px, transparent 50%),
+      radial-gradient(at 0% 80%, hsla(280, 50%, 15%, 0.4) 0px, transparent 50%);
     background-attachment: fixed;
   }
 
@@ -56,12 +62,43 @@
     @apply bg-card/30 backdrop-blur-md border border-border/50 shadow-lg hover:shadow-2xl transition-all duration-500 hover:border-primary/30 hover:bg-card/40;
   }
 
+  /* Enhanced glow card with animated border */
+  .glass-card-glow {
+    @apply bg-card/30 backdrop-blur-md border border-border/50 shadow-lg transition-all duration-500;
+    position: relative;
+  }
+
+  .glass-card-glow:hover {
+    @apply shadow-2xl border-primary/40;
+    box-shadow:
+      0 0 20px hsla(var(--primary), 0.15),
+      0 0 40px hsla(var(--primary), 0.05),
+      0 25px 50px -12px rgba(0, 0, 0, 0.3);
+  }
+
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] animate-gradient;
   }
 
   .border-gradient {
     @apply border-transparent bg-gradient-to-r from-primary/50 to-accent/50 bg-clip-border;
+  }
+
+  /* Shimmer loading effect */
+  .shimmer {
+    background: linear-gradient(90deg, transparent, hsla(var(--primary), 0.1), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
   }
 
   @keyframes gradient {
@@ -81,4 +118,72 @@
   .animate-gradient {
     animation: gradient 8s linear infinite;
   }
+
+  /* Floating glow pulse for icons */
+  @keyframes glow-pulse {
+
+    0%,
+    100% {
+      filter: drop-shadow(0 0 4px hsla(var(--primary), 0.2));
+    }
+
+    50% {
+      filter: drop-shadow(0 0 12px hsla(var(--primary), 0.5));
+    }
+  }
+
+  .glow-icon {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+
+  /* Smooth entrance from below */
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out forwards;
+  }
+
+  /* Support for safe area (iPhone notch) */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsla(260, 20%, 30%, 0.6);
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsla(260, 20%, 40%, 0.8);
 }

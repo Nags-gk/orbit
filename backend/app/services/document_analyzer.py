@@ -1,7 +1,7 @@
 """
 LLM-powered Document Analyzer Service
 
-Uses Gemini 2.5 Pro to natively parse documents (PDFs, Images, Spreadsheets)
+Uses Gemini 2.5 Flash to natively parse documents (PDFs, Images, Spreadsheets)
 and extract structured transaction data.
 """
 import os
@@ -24,7 +24,7 @@ class ExtractionResult(BaseModel):
 
 def analyze_financial_document(file_bytes: bytes, mime_type: str) -> list[dict]:
     """
-    Sends the raw file bytes to Gemini 2.5 Pro and instructs it to
+    Sends the raw file bytes to Gemini 2.5 Flash and instructs it to
     extract a structured JSON list of transactions.
     """
     api_key = os.getenv("GEMINI_API_KEY")
@@ -50,7 +50,7 @@ def analyze_financial_document(file_bytes: bytes, mime_type: str) -> list[dict]:
     
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model="gemini-2.5-flash",
             contents=[
                 types.Part.from_bytes(
                     data=file_bytes,

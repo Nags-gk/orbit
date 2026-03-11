@@ -122,3 +122,59 @@ async def confirm_transactions(
         "transactions": saved,
         "message": f"Successfully saved {len(saved)} transactions",
     }
+
+
+@router.post("/compare")
+async def compare_documents(
+    files: list[UploadFile] = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Upload 2-5 financial documents for comparative spending analysis.
+    
+    Extracts transactions from each document and compares spending patterns,
+    identifies trends, anomalies, and generates insights.
+    """
+    from ..services.document_comparator import compare_document_extractions, generate_narrative_summary
+    
+    if len(files) < 2:
+        raise HTTPException(status_code=400, detail="Please upload at least 2 documents to compare.")
+    if len(files) > 5:
+        raise HTTPException(status_code=400, detail="Maximum 5 documents can be compared at once.")
+    
+    doc_extractions = []
+    
+    for file in files:
+        mime_type = file.content_type
+        if not mime_type or mime_type not in SUPPORTED_MIME_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type '{mime_type}' for file '{file.filename}'. Please upload PDF, images (JPG/PNG), or CSV/Excel."
+            )
+        
+        contents = await file.read()
+        if len(contents) > 20 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail=f"File '{file.filename}' too large (max 20MB allowed)")
+        
+        try:
+            transactions = analyze_financial_document(file_bytes=contents, mime_type=mime_type)
+            doc_extractions.append({
+                "filename": file.filename or f"Document {len(doc_extractions) + 1}",
+                "transactions": transactions,
+                "transactionCount": len(transactions),
+            })
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to extract transactions from '{file.filename}': {str(e)}"
+            )
+    
+    # Run the comparison engine
+    comparison = compare_document_extractions(doc_extractions)
+    
+    # Try to generate a narrative summary via Gemini
+    narrative = generate_narrative_summary(comparison)
+    if narrative:
+        comparison["narrative"] = narrative
+    
+    return comparison

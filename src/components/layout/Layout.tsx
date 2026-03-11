@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { BottomNav } from './BottomNav';
 import { ChatAssistant } from '../ai/ChatAssistant';
 
 export function Layout() {
@@ -14,12 +15,14 @@ export function Layout() {
             <div className="md:pl-[18rem] flex flex-col min-h-screen transition-all duration-300">
                 <Topbar onMenuClick={() => setIsSidebarOpen(true)} />
 
-                <main className="flex-1 overflow-y-auto p-4 md:p-6 pt-0">
+                <main className="flex-1 overflow-y-auto p-4 md:p-6 pt-0 pb-20 md:pb-6">
                     <Outlet />
                 </main>
             </div>
 
+            <BottomNav />
             <ChatAssistant />
         </div>
     );
 }
+

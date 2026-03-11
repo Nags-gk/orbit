@@ -2,12 +2,15 @@
 REST router for transactions and subscriptions.
 Used by the frontend directly, separate from the AI chat pipeline.
 """
+from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
-from ..models import Transaction, Subscription, User, TransactionType, TransactionCategory
+from ..models import Transaction, Subscription, User, TransactionType, TransactionCategory, Account, AccountType
 from ..services.security import get_current_user
+from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import func
@@ -177,10 +180,74 @@ async def get_summary(
     )
     active_subscriptions = subs_result.scalar() or 0
 
+    # Fetch all accounts to group balances
+    accounts_result = await db.execute(
+        select(Account)
+        .where(Account.user_id == current_user.id)
+    )
+    accounts = accounts_result.scalars().all()
+    
+    depository_balance = sum(a.balance for a in accounts if a.type == AccountType.depository)
+    credit_balance = sum(a.balance for a in accounts if a.type == AccountType.credit)
+    investment_balance = sum(a.balance for a in accounts if a.type == AccountType.investment)
+    loan_balance = sum(a.balance for a in accounts if a.type == AccountType.loan)
+
     return {
         "totalBalance": total_balance,
         "monthlySpending": monthly_spending,
         "activeSubscriptions": active_subscriptions,
         "savingsGoal": 5000.0, # This can be wired up to BudgetGoal later
+        "accountsInfo": {
+            "depository": depository_balance,
+            "credit": credit_balance,
+            "investment": investment_balance,
+            "loan": loan_balance
+        }
     }
 
+
+class AutoCategorizeRequest(BaseModel):
+    transaction_ids: Optional[list] = None  # If None, re-categorize all
+
+
+@router.post("/transactions/auto-categorize")
+async def bulk_auto_categorize(
+    request: AutoCategorizeRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Re-categorize transactions using the AI-powered categorizer."""
+    from ..services.categorizer import auto_categorize
+
+    query = select(Transaction).where(Transaction.user_id == current_user.id)
+    if request.transaction_ids:
+        query = query.where(Transaction.id.in_(request.transaction_ids))
+    
+    result = await db.execute(query)
+    transactions = result.scalars().all()
+    
+    updated = []
+    for tx in transactions:
+        cat_result = auto_categorize(tx.description)
+        new_cat = TransactionCategory(cat_result["category"])
+        old_cat = tx.category
+        
+        if old_cat != new_cat:
+            tx.category = new_cat
+            updated.append({
+                "id": tx.id,
+                "description": tx.description,
+                "oldCategory": old_cat.value if hasattr(old_cat, 'value') else old_cat,
+                "newCategory": cat_result["category"],
+                "confidence": cat_result["confidence"],
+                "method": cat_result["method"],
+            })
+    
+    await db.commit()
+    
+    return {
+        "totalProcessed": len(transactions),
+        "totalUpdated": len(updated),
+        "updates": updated,
+        "message": f"Re-categorized {len(updated)} of {len(transactions)} transactions.",
+    }
