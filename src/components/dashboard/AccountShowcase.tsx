@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreditCard, Landmark, LineChart, Wallet, Pencil, Check, X } from 'lucide-react';
+import { CreditCard, Landmark, LineChart, Wallet, Pencil, Check, X, Loader2 } from 'lucide-react';
 import type { Account } from '../../hooks/useAccounts';
 
 interface AccountShowcaseProps {
@@ -11,6 +11,8 @@ interface AccountShowcaseProps {
 export function AccountShowcase({ accounts, isLoading, onUpdateAccount }: AccountShowcaseProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     if (isLoading) {
         return (
@@ -57,6 +59,7 @@ export function AccountShowcase({ accounts, isLoading, onUpdateAccount }: Accoun
     const startEditing = (account: Account) => {
         setEditingId(account.id);
         setEditName(account.name);
+        setError(null);
     };
 
     const cancelEditing = () => {
@@ -65,11 +68,23 @@ export function AccountShowcase({ accounts, isLoading, onUpdateAccount }: Accoun
     };
 
     const saveEdit = async (id: string) => {
-        if (onUpdateAccount && editName.trim()) {
-            await onUpdateAccount(id, { name: editName.trim() });
+        if (!onUpdateAccount || !editName.trim()) {
+            cancelEditing();
+            return;
         }
-        setEditingId(null);
-        setEditName('');
+
+        setIsSaving(true);
+        setError(null);
+        try {
+            await onUpdateAccount(id, { name: editName.trim() });
+            setEditingId(null);
+            setEditName('');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to save');
+            // Keep editing mode open so they can try again or fix the name
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -95,26 +110,48 @@ export function AccountShowcase({ accounts, isLoading, onUpdateAccount }: Accoun
 
                         <div className="space-y-1">
                             {editingId === account.id ? (
-                                <div className="flex items-center gap-1">
-                                    <input
-                                        type="text"
-                                        value={editName}
-                                        onChange={(e) => setEditName(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') saveEdit(account.id);
-                                            if (e.key === 'Escape') cancelEditing();
-                                        }}
-                                        className="text-sm font-medium bg-background/80 border border-border rounded px-2 py-0.5 w-full text-foreground outline-none focus:border-primary"
-                                        autoFocus
-                                        placeholder={account.subtype}
-                                    />
-                                    <button onClick={() => saveEdit(account.id)} className="p-1 hover:text-primary text-muted-foreground transition-colors">
-                                        <Check className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button onClick={cancelEditing} className="p-1 hover:text-destructive text-muted-foreground transition-colors">
-                                        <X className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
+                                <>
+                                    <div className="flex items-center gap-1">
+                                        <input
+                                            type="text"
+                                            value={editName}
+                                            onChange={(e) => setEditName(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') saveEdit(account.id);
+                                                if (e.key === 'Escape') cancelEditing();
+                                            }}
+                                            disabled={isSaving}
+                                            className={`text-sm font-medium bg-background/80 border rounded px-2 py-0.5 w-full text-foreground outline-none transition-colors ${error ? 'border-destructive' : 'border-border focus:border-primary'}`}
+                                            autoFocus
+                                            placeholder={account.subtype}
+                                        />
+                                        {isSaving ? (
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                                        ) : (
+                                            <>
+                                                <button 
+                                                    onClick={() => saveEdit(account.id)} 
+                                                    className="p-1 hover:text-primary text-muted-foreground transition-colors"
+                                                    title="Save"
+                                                >
+                                                    <Check className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button 
+                                                    onClick={cancelEditing} 
+                                                    className="p-1 hover:text-destructive text-muted-foreground transition-colors"
+                                                    title="Cancel"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                    {error && (
+                                        <p className="text-[10px] text-destructive mt-0.5 ml-1 animate-pulse">
+                                            {error}
+                                        </p>
+                                    )}
+                                </>
                             ) : (
                                 <div className="flex items-center gap-1.5">
                                     <p className="text-sm font-medium text-muted-foreground truncate">

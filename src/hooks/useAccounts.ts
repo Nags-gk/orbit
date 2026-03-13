@@ -47,7 +47,9 @@ export function useAccounts(): UseAccountsReturn {
             });
             setAccounts(prev => prev.map(a => a.id === id ? updated : a));
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Update failed');
+            const errorMessage = err instanceof Error ? err.message : 'Update failed';
+            setError(errorMessage);
+            throw err; // Re-throw so caller knows it failed
         }
     }, []);
 
