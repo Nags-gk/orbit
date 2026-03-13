@@ -52,22 +52,45 @@ async def export_report(
     if not end_date:
         end_date = today
 
+    # ── Report Type Filtering Logic ──
+    include_income = True
+    include_expenses = True
+    include_accounts = True
+    allowed_account_types = None # None means all
+    
+    if report_type == "tax":
+        include_income = False
+        include_accounts = False
+    elif report_type == "monthly":
+        include_accounts = False
+    elif report_type == "investment":
+        # Only show accounts related to investing, and no daily transactions
+        include_income = False
+        include_expenses = False
+        allowed_account_types = {"investment", "brokerage", "crypto", "401k", "ira", "roth"}
+
     # ── Fetch Transactions ──
-    tx_query = (
-        select(Transaction)
-        .where(Transaction.user_id == current_user.id)
-        .where(Transaction.date >= start_date)
-        .where(Transaction.date <= end_date)
-        .order_by(Transaction.date.desc())
-    )
-    result = await db.execute(tx_query)
-    transactions = result.scalars().all()
+    if include_income or include_expenses:
+        tx_query = (
+            select(Transaction)
+            .where(Transaction.user_id == current_user.id)
+            .where(Transaction.date >= start_date)
+            .where(Transaction.date <= end_date)
+            .order_by(Transaction.date.desc())
+        )
+        result = await db.execute(tx_query)
+        transactions = result.scalars().all()
+    else:
+        transactions = []
 
     # ── Fetch Accounts ──
-    acct_result = await db.execute(
-        select(Account).where(Account.user_id == current_user.id)
-    )
-    accounts = acct_result.scalars().all()
+    if include_accounts:
+        acct_result = await db.execute(
+            select(Account).where(Account.user_id == current_user.id)
+        )
+        accounts = acct_result.scalars().all()
+    else:
+        accounts = []
 
     # ── Build transaction list ──
     tx_list = []
@@ -80,6 +103,10 @@ async def export_report(
         type_val = tx.type.value if hasattr(tx.type, 'value') else str(tx.type)
         amount = float(tx.amount)
         
+        # Apply tax filter
+        if report_type == "tax" and type_val != "expense":
+            continue
+            
         if type_val == "income":
             total_income += amount
         else:
@@ -101,9 +128,13 @@ async def export_report(
     
     for acct in accounts:
         atype_val = acct.type.value if hasattr(acct.type, 'value') else str(acct.type)
+        
+        if allowed_account_types and atype_val.lower() not in allowed_account_types:
+            continue
+            
         balance = float(acct.balance)
         
-        if atype_val in ("credit", "loan"):
+        if atype_val in ("credit", "loan", "mortgage"):
             total_liabilities += balance
         else:
             total_assets += balance

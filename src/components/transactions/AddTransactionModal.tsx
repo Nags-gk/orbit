@@ -54,9 +54,17 @@ export function AddTransactionModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    <span className="inline">Add Transaction</span>
+                <Button variant="outline" className="gap-2 border-primary/30 bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-all group">
+                    <Plus
+                        className="w-4 h-4 text-primary transition-all duration-300"
+                        style={{ filter: 'drop-shadow(0 0 8px rgba(var(--primary), 0.8))' }}
+                    />
+                    <span
+                        className="inline font-semibold text-primary transition-all duration-300"
+                        style={{ textShadow: '0 0 10px rgba(var(--primary), 0.8), 0 0 20px rgba(var(--primary), 0.4)' }}
+                    >
+                        Add Transaction
+                    </span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">

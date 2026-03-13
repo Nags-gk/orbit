@@ -35,6 +35,14 @@ export function exportReportPDF(data: ReportData): void {
     const pageWidth = doc.internal.pageSize.getWidth();
     let y = 15;
 
+    const reportType = data.reportType || 'full';
+    const typeLabels: Record<string, string> = {
+        full: 'Full Financial Report',
+        monthly: 'Monthly Spending Report',
+        tax: 'Tax Summary Report',
+        investment: 'Investment Portfolio Report'
+    };
+
     // ── Header Bar ──
     doc.setFillColor(...COLORS.dark);
     doc.rect(0, 0, pageWidth, 35, 'F');
@@ -50,7 +58,7 @@ export function exportReportPDF(data: ReportData): void {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(180, 180, 200);
-    doc.text('Financial Report', 15, 26);
+    doc.text(typeLabels[reportType] || 'Financial Report', 15, 26);
     doc.text(`${fmtDate(data.dateRange.from)} — ${fmtDate(data.dateRange.to)}`, 15, 32);
 
     doc.setFontSize(9);
@@ -66,14 +74,31 @@ export function exportReportPDF(data: ReportData): void {
     doc.text('Financial Summary', 15, y);
     y += 8;
 
-    const cardWidth = (pageWidth - 40) / 4;
-    const cards = [
-        { label: 'Total Income', value: fmtCurrency(data.summary.totalIncome), color: COLORS.green },
-        { label: 'Total Expenses', value: fmtCurrency(data.summary.totalExpenses), color: COLORS.red },
-        { label: 'Net Balance', value: `${data.summary.netBalance >= 0 ? '+' : '-'}${fmtCurrency(data.summary.netBalance)}`, color: data.summary.netBalance >= 0 ? COLORS.green : COLORS.red },
-        { label: 'Net Worth', value: fmtCurrency(data.summary.netWorth), color: COLORS.primary },
-    ];
+    let cards = [];
+    if (reportType === 'investment') {
+        cards = [
+            { label: 'Total Assets', value: fmtCurrency(data.summary.totalAssets), color: COLORS.green },
+            { label: 'Liabilities', value: fmtCurrency(data.summary.totalLiabilities), color: COLORS.red },
+            { label: 'Net Worth', value: fmtCurrency(data.summary.netWorth), color: COLORS.primary },
+            { label: 'Accounts', value: data.accounts.length.toString(), color: COLORS.dark },
+        ];
+    } else if (reportType === 'tax') {
+        cards = [
+            { label: 'Total Expenses', value: fmtCurrency(data.summary.totalExpenses), color: COLORS.red },
+            { label: 'Transactions', value: data.summary.totalTransactions.toString(), color: COLORS.dark },
+            { label: 'Taxable Dist.', value: '$0.00', color: COLORS.medium },
+            { label: 'Adj. Balance', value: fmtCurrency(data.summary.netBalance), color: COLORS.medium },
+        ];
+    } else {
+        cards = [
+            { label: 'Total Income', value: fmtCurrency(data.summary.totalIncome), color: COLORS.green },
+            { label: 'Total Expenses', value: fmtCurrency(data.summary.totalExpenses), color: COLORS.red },
+            { label: 'Net Balance', value: `${data.summary.netBalance >= 0 ? '+' : '-'}${fmtCurrency(data.summary.netBalance)}`, color: data.summary.netBalance >= 0 ? COLORS.green : COLORS.red },
+            { label: 'Net Worth', value: fmtCurrency(data.summary.netWorth), color: COLORS.primary },
+        ];
+    }
 
+    const cardWidth = (pageWidth - 40) / 4;
     cards.forEach((card, i) => {
         const x = 15 + i * (cardWidth + 3.33);
         doc.setFillColor(...COLORS.light);
@@ -85,7 +110,7 @@ export function exportReportPDF(data: ReportData): void {
         doc.text(card.label, x + 4, y + 8);
 
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
+        doc.setFontSize(11);
         doc.setTextColor(...card.color);
         doc.text(card.value, x + 4, y + 17);
     });
@@ -93,7 +118,7 @@ export function exportReportPDF(data: ReportData): void {
     y += 30;
 
     // ── Category Breakdown ──
-    if (data.categoryBreakdown.length > 0) {
+    if (data.categoryBreakdown.length > 0 && reportType !== 'investment') {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
         doc.setTextColor(...COLORS.dark);
@@ -111,18 +136,9 @@ export function exportReportPDF(data: ReportData): void {
             head: [['Category', 'Amount', '% of Total']],
             body: catBody,
             margin: { left: 15, right: 15 },
-            styles: {
-                fontSize: 9,
-                cellPadding: 3,
-            },
-            headStyles: {
-                fillColor: COLORS.primary,
-                textColor: COLORS.white,
-                fontStyle: 'bold',
-            },
-            alternateRowStyles: {
-                fillColor: [248, 250, 252],
-            },
+            styles: { fontSize: 9, cellPadding: 3 },
+            headStyles: { fillColor: COLORS.primary, textColor: COLORS.white, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
             theme: 'grid',
         });
 
@@ -131,21 +147,17 @@ export function exportReportPDF(data: ReportData): void {
 
     // ── Transaction Table ──
     if (data.transactions.length > 0) {
-        // Check if we need a new page
-        if (y > 200) {
-            doc.addPage();
-            y = 20;
-        }
+        if (y > 220) { doc.addPage(); y = 20; }
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
         doc.setTextColor(...COLORS.dark);
-        doc.text(`Transactions (${data.transactions.length})`, 15, y);
+        doc.text(reportType === 'tax' ? 'Expense Records' : 'Transactions List', 15, y);
         y += 3;
 
         const txBody = data.transactions.map(tx => [
             fmtDate(tx.date),
-            tx.description.length > 35 ? tx.description.substring(0, 35) + '...' : tx.description,
+            tx.description.length > 40 ? tx.description.substring(0, 40) + '...' : tx.description,
             tx.type === 'income' ? `+${fmtCurrency(tx.amount)}` : `-${fmtCurrency(tx.amount)}`,
             tx.category,
         ]);
@@ -155,32 +167,15 @@ export function exportReportPDF(data: ReportData): void {
             head: [['Date', 'Description', 'Amount', 'Category']],
             body: txBody,
             margin: { left: 15, right: 15 },
-            styles: {
-                fontSize: 8,
-                cellPadding: 2.5,
-            },
-            headStyles: {
-                fillColor: COLORS.dark,
-                textColor: COLORS.white,
-                fontStyle: 'bold',
-            },
-            alternateRowStyles: {
-                fillColor: [248, 250, 252],
-            },
-            columnStyles: {
-                0: { cellWidth: 28 },
-                2: { cellWidth: 28, halign: 'right' },
-                3: { cellWidth: 25 },
-            },
+            styles: { fontSize: 8, cellPadding: 2.5 },
+            headStyles: { fillColor: COLORS.dark, textColor: COLORS.white, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: { 0: { cellWidth: 28 }, 2: { cellWidth: 28, halign: 'right' }, 3: { cellWidth: 25 } },
             theme: 'grid',
             didParseCell: (hookData: any) => {
                 if (hookData.section === 'body' && hookData.column.index === 2) {
                     const val = hookData.cell.raw as string;
-                    if (val.startsWith('+')) {
-                        hookData.cell.styles.textColor = COLORS.green;
-                    } else {
-                        hookData.cell.styles.textColor = COLORS.red;
-                    }
+                    hookData.cell.styles.textColor = val.startsWith('+') ? COLORS.green : COLORS.red;
                 }
             },
         });
@@ -189,16 +184,13 @@ export function exportReportPDF(data: ReportData): void {
     }
 
     // ── Account Summary ──
-    if (data.accounts.length > 0) {
-        if (y > 230) {
-            doc.addPage();
-            y = 20;
-        }
+    if (data.accounts.length > 0 && reportType !== 'tax') {
+        if (y > 230) { doc.addPage(); y = 20; }
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
         doc.setTextColor(...COLORS.dark);
-        doc.text('Accounts', 15, y);
+        doc.text(reportType === 'investment' ? 'Portfolio Accounts' : 'Accounts Overview', 15, y);
         y += 3;
 
         const acctBody = data.accounts.map(acct => [
@@ -213,37 +205,25 @@ export function exportReportPDF(data: ReportData): void {
             head: [['Account', 'Type', 'Subtype', 'Balance']],
             body: acctBody,
             margin: { left: 15, right: 15 },
-            styles: {
-                fontSize: 9,
-                cellPadding: 3,
-            },
-            headStyles: {
-                fillColor: COLORS.primary,
-                textColor: COLORS.white,
-                fontStyle: 'bold',
-            },
-            alternateRowStyles: {
-                fillColor: [248, 250, 252],
-            },
+            styles: { fontSize: 9, cellPadding: 3 },
+            headStyles: { fillColor: COLORS.primary, textColor: COLORS.white, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
             theme: 'grid',
         });
     }
 
-    // ── Footer on each page ──
+    // ── Footer ──
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         const pageHeight = doc.internal.pageSize.getHeight();
         doc.setFillColor(...COLORS.dark);
         doc.rect(0, pageHeight - 12, pageWidth, 12, 'F');
-
-        doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
         doc.setTextColor(150, 150, 170);
-        doc.text('Generated by Orbit AI Financial Dashboard', 15, pageHeight - 5);
+        doc.text('Orbit AI Financial Assistant — Confidential Report', 15, pageHeight - 5);
         doc.text(`Page ${i} of ${pageCount}`, pageWidth - 15, pageHeight - 5, { align: 'right' });
     }
 
-    // ── Save ──
-    doc.save(`orbit-report-${data.dateRange.from}-to-${data.dateRange.to}.pdf`);
+    doc.save(`orbit-${reportType}-report-${data.dateRange.from}.pdf`);
 }

@@ -41,7 +41,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
                     <div className="w-full h-full rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center border border-border overflow-hidden">
                         {user?.profilePictureUrl ? (
                             <img
-                                src={user.profilePictureUrl.startsWith('http') ? user.profilePictureUrl : `${window.location.protocol}//${window.location.hostname}:5173${user.profilePictureUrl}`}
+                                src={user.profilePictureUrl}
                                 alt="Profile"
                                 className="w-full h-full object-cover"
                             />

@@ -82,8 +82,7 @@ export default function Profile() {
     // Helper to get full URL for profile picture
     const getProfilePictureUrl = () => {
         if (!user?.profilePictureUrl) return null;
-        if (user.profilePictureUrl.startsWith('http')) return user.profilePictureUrl;
-        return `${window.location.protocol}//${window.location.hostname}:5173${user.profilePictureUrl}`; // Proxy via dev server
+        return user.profilePictureUrl; // Rely on Vite proxy for relative paths
     };
 
     return (
