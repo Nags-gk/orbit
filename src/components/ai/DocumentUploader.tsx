@@ -5,6 +5,7 @@ import { cn } from '../../lib/utils';
 
 export function DocumentUploader() {
     const [isDragOver, setIsDragOver] = useState(false);
+    const [successData, setSuccessData] = useState<{ saved: number; skipped: number } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const {
         isUploading,
@@ -13,10 +14,24 @@ export function DocumentUploader() {
         error,
         uploadDocument,
         confirmTransactions,
-        clearResult,
+        clearResult: baseClearResult,
     } = useDocumentAI();
 
+    const clearResult = useCallback(() => {
+        setSuccessData(null);
+        baseClearResult();
+    }, [baseClearResult]);
+
+    const handleConfirm = async () => {
+        if (!uploadResult) return;
+        const result = await confirmTransactions(uploadResult.transactions);
+        if (result) {
+            setSuccessData({ saved: result.saved, skipped: result.skipped });
+        }
+    };
+
     const handleFile = useCallback((file: File) => {
+        setSuccessData(null);
         // Accept PDFs, Images (PNG/JPG), and CSV/Excel
         if (!file.type.match(/(pdf|image\/|text\/csv|spreadsheetml)/)) {
             return;
@@ -37,6 +52,32 @@ export function DocumentUploader() {
     };
 
     const handleDragLeave = () => setIsDragOver(false);
+
+    // Success View
+    if (successData) {
+        return (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
+                <div className="flex justify-center mb-2">
+                    <div className="p-2 bg-emerald-500/20 rounded-full">
+                        <Check className="w-5 h-5 text-emerald-500" />
+                    </div>
+                </div>
+                <h4 className="text-sm font-semibold text-foreground mb-1">Import Complete</h4>
+                <p className="text-xs text-muted-foreground">
+                    Imported <span className="text-emerald-500 font-medium">{successData.saved}</span> transactions.
+                    {successData.skipped > 0 && (
+                        <> Skipped <span className="text-amber-500 font-medium">{successData.skipped}</span> duplicates.</>
+                    )}
+                </p>
+                <button
+                    onClick={clearResult}
+                    className="mt-3 text-xs font-medium text-primary hover:underline"
+                >
+                    Upload another
+                </button>
+            </div>
+        );
+    }
 
     // Upload result view
     if (uploadResult) {
@@ -75,7 +116,7 @@ export function DocumentUploader() {
                             ))}
                         </div>
                         <button
-                            onClick={() => confirmTransactions(uploadResult.transactions)}
+                            onClick={handleConfirm}
                             disabled={isConfirming}
                             className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                         >

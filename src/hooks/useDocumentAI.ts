@@ -24,7 +24,7 @@ interface UseDocumentAIReturn {
     uploadResult: UploadResult | null;
     error: string | null;
     uploadDocument: (file: File) => Promise<void>;
-    confirmTransactions: (transactions: ExtractedTransaction[]) => Promise<void>;
+    confirmTransactions: (transactions: ExtractedTransaction[]) => Promise<any>;
     clearResult: () => void;
 }
 
@@ -61,13 +61,17 @@ export function useDocumentAI(): UseDocumentAIReturn {
         setError(null);
 
         try {
-            await apiFetch('/documents/confirm', {
+            const result = await apiFetch('/documents/confirm', {
                 method: 'POST',
                 body: JSON.stringify(transactions),
             });
 
+            // Dispatch event so Dashboard or other components can refresh
+            window.dispatchEvent(new CustomEvent('transaction-added', { detail: result }));
+            
             // Clear result after successful save
             setUploadResult(null);
+            return result;
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Save failed');
         } finally {

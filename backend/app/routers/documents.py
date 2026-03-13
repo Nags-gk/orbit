@@ -89,9 +89,39 @@ async def confirm_transactions(
     Legacy catch: Save confirmed extracted transactions to the database.
     """
     saved = []
+    skipped = 0
     async with async_session() as db:
         for tx_data in transactions:
             try:
+                # Extract and normalize fields
+                date_val = date.fromisoformat(tx_data["date"]) if "date" in tx_data else date.today()
+                amount_val = float(tx_data.get("amount", 0))
+                desc_val = tx_data.get("description", "Imported transaction").strip()
+                
+                # Deduplication Check: Look for existing tx with same date, amount, and similar description
+                # We use a simple case-insensitive exact match for now, or startswith
+                stmt = (
+                    select(Transaction)
+                    .where(Transaction.user_id == current_user.id)
+                    .where(Transaction.date == date_val)
+                    .where(Transaction.amount == amount_val)
+                )
+                result = await db.execute(stmt)
+                existing_txs = result.scalars().all()
+                
+                is_duplicate = False
+                for existing in existing_txs:
+                    # Simple fuzzy check: if one description contains the other or they match case-insensitively
+                    e_desc = existing.description.lower()
+                    n_desc = desc_val.lower()
+                    if e_desc == n_desc or n_desc in e_desc or e_desc in n_desc:
+                        is_duplicate = True
+                        break
+                
+                if is_duplicate:
+                    skipped += 1
+                    continue
+
                 # Map category string to enum
                 cat_str = tx_data.get("category", "Shopping")
                 try:
@@ -104,11 +134,11 @@ async def confirm_transactions(
 
                 tx = Transaction(
                     user_id=current_user.id,
-                    description=tx_data.get("description", "Imported transaction"),
-                    amount=float(tx_data.get("amount", 0)),
+                    description=desc_val,
+                    amount=amount_val,
                     category=category,
                     type=tx_type,
-                    date=date.fromisoformat(tx_data["date"]) if "date" in tx_data else date.today(),
+                    date=date_val,
                 )
                 db.add(tx)
                 saved.append(tx_data)
@@ -119,8 +149,9 @@ async def confirm_transactions(
 
     return {
         "saved": len(saved),
+        "skipped": skipped,
         "transactions": saved,
-        "message": f"Successfully saved {len(saved)} transactions",
+        "message": f"Successfully saved {len(saved)} transactions. {skipped} duplicates were skipped.",
     }
 
 
