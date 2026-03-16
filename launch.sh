@@ -28,7 +28,8 @@ sleep 2
 
 # 2. Start Frontend in the background
 echo "🟢 Starting Frontend PWA Server (Port 4173)..."
-echo "🌐 You can access the application at: http://localhost:4173\n"
+echo "🌐 You can access the application at: http://localhost:4173"
+echo ""
 npm run preview &
 
 # Keep script running and wait for user to gracefully terminate
