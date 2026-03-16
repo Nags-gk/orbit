@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Plus, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiFetch } from '../../lib/api';
+import { cn } from '../../lib/utils';
 
 export function AddTransactionModal() {
     const [open, setOpen] = useState(false);
@@ -73,24 +74,34 @@ export function AddTransactionModal() {
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                        <label htmlFor="type" className="text-sm font-medium">Type</label>
-                        <div className="flex gap-2">
-                            <Button
+                        <label className="text-sm font-medium">Transaction Type</label>
+                        <div className="flex p-1 bg-foreground/5 rounded-xl border border-border/50">
+                            <button
                                 type="button"
-                                variant={type === 'expense' ? 'default' : 'outline'}
                                 onClick={() => setType('expense')}
-                                className="flex-1"
+                                className={cn(
+                                    "flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2",
+                                    type === 'expense' 
+                                        ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/20 scale-[1.02]" 
+                                        : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
+                                )}
                             >
+                                <span className={cn("w-2 h-2 rounded-full", type === 'expense' ? "bg-white" : "bg-red-500/50")} />
                                 Expense
-                            </Button>
-                            <Button
+                            </button>
+                            <button
                                 type="button"
-                                variant={type === 'income' ? 'default' : 'outline'}
                                 onClick={() => setType('income')}
-                                className="flex-1"
+                                className={cn(
+                                    "flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2",
+                                    type === 'income' 
+                                        ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/20 scale-[1.02]" 
+                                        : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
+                                )}
                             >
+                                <span className={cn("w-2 h-2 rounded-full", type === 'income' ? "bg-white" : "bg-emerald-500/50")} />
                                 Income
-                            </Button>
+                            </button>
                         </div>
                     </div>
 

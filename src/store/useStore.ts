@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { MOCK_TRANSACTIONS, MOCK_SUBSCRIPTIONS, type Transaction, type Subscription } from '../lib/mockData';
+import { type Transaction, type Subscription } from '../lib/mockData';
 import { type ThemeVariable, type ThemeTokens } from '../lib/themes';
 
 interface AppState {
@@ -33,8 +33,8 @@ export const useStore = create<AppState>()(
 
             resetCustomTheme: () => set({ customColors: {} }),
 
-            transactions: MOCK_TRANSACTIONS,
-            subscriptions: MOCK_SUBSCRIPTIONS,
+            transactions: [],
+            subscriptions: [],
             addTransaction: (tx) => set((state) => ({ transactions: [tx, ...state.transactions] })),
             removeSubscription: (id) => set((state) => ({
                 subscriptions: state.subscriptions.filter(sub => sub.id !== id)
@@ -44,8 +44,10 @@ export const useStore = create<AppState>()(
             name: 'orbit-store',
             partialize: (state) => ({
                 themeId: state.themeId,
-                customColors: state.customColors
-            }), // Only persist theme data to avoid duplicating auth data
+                customColors: state.customColors,
+                transactions: state.transactions,
+                subscriptions: state.subscriptions
+            }),
         }
     )
 );

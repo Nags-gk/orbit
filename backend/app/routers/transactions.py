@@ -47,12 +47,24 @@ async def create_transaction(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        tx_type_enum = TransactionType(tx_data.type)
-        # Handle string checking for mapped Enums
+        # Handle case-insensitive type
+        tx_type_enum = TransactionType(tx_data.type.lower())
+        
+        # Handle case-insensitive category (try key first, then value)
         try:
+            # Try by key (exact match)
             tx_cat_enum = getattr(TransactionCategory, tx_data.category)
         except AttributeError:
-            tx_cat_enum = TransactionCategory(tx_data.category)
+            try:
+                # Try by value (exact match)
+                tx_cat_enum = TransactionCategory(tx_data.category)
+            except ValueError:
+                # Try case-insensitive matching against values
+                category_map = {c.value.lower(): c for c in TransactionCategory}
+                if tx_data.category.lower() in category_map:
+                    tx_cat_enum = category_map[tx_data.category.lower()]
+                else:
+                    raise ValueError(f"Invalid category: {tx_data.category}")
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid transaction type or category")
 

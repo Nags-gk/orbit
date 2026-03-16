@@ -19,7 +19,7 @@ export function useNotifications() {
         try {
             // Check budget overages
             const budgets = await apiFetch('/budgets');
-            const summary = await apiFetch('/transactions/summary');
+            const summary = await apiFetch('/summary');
 
             if (budgets && summary?.categoryBreakdown) {
                 for (const budget of budgets) {
