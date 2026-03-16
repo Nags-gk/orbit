@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     # Gemini API
     gemini_api_key: str = ""
 
+    # Local LLM
+    use_local_llm: bool = False
+    local_model_url: str = "http://localhost:11434/v1"
+    local_model_name: str = "llama3.1"
+
     # Database — defaults to local SQLite
     database_url: str = f"sqlite+aiosqlite:///{DB_PATH}"
 
