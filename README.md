@@ -43,7 +43,8 @@ Unlike traditional budgeting apps that rely on tedious manual entry, Orbit utili
 ## ✨ Key Features
 
 ### 🤖 True AI Intelligence
-*   **Multimodal Document Analyzer**: Powered by Google's Gemini, simply drag-and-drop your PDFs, JPEGs, PNGs, CSVs, or Excel sheets. The AI instantly reads, parses, and structures your raw transactions with zero human intervention.
+*   **Local Privacy Mode (100% Offline)**: Ditch the cloud. Orbit seamlessly integrates with local models (via Ollama/LM Studio), meaning your sensitive financial PDFs and transaction data *never* leave your machine.
+*   **Multimodal Document Analyzer**: Powered by AI, simply drag-and-drop your PDFs, JPEGs, PNGs, CSVs, or Excel sheets. The agent instantly parses and structures your raw transactions with zero human intervention.
 *   **Conversational AI Assistant**: An embedded chatbot capable of answering complex financial queries (e.g., *"How much did I spend on Food last week?"*) or actioning commands (e.g., *"Add $45 for lunch today"*).
 *   **Voice Interactions**: Orbit's assistant features embedded web-native text-to-speech, allowing it to speak its responses back to you.
 *   **Spending Forecasts**: View mathematical projections mapping out your predictive 30-day spending trajectory based on your historical patterns.
@@ -74,7 +75,7 @@ Unlike traditional budgeting apps that rely on tedious manual entry, Orbit utili
 | **Data Visualization**| Recharts |
 | **Backend Server** | Python 3.9+, FastAPI, Uvicorn |
 | **Database & ORM** | SQLite (Async `aiosqlite`), SQLAlchemy 2.0 |
-| **AI Processing** | Google `google-genai` (Gemini SDK) |
+| **AI Processing** | Google `google-genai` (Gemini) OR Local LLMs (Ollama + `openai` SDK) |
 
 ---
 
@@ -86,54 +87,33 @@ Getting Orbit running on your local machine takes less than 5 minutes.
 Make sure you have the following installed:
 - **Node.js** (v18+ recommended)
 - **Python** (v3.9+ recommended)
-- **API Keys**: A **Google Gemini API Key** is required for the AI features.
+- **AI Engine**: Either a **Google Gemini API Key** OR a local engine like **Ollama** installed.
 
-### Installation
+### Installation (Using Helper Scripts)
 
-#### 1. Clone the Repository
+#### 1. Clone & Configure
 ```bash
 git clone https://github.com/your-username/orbit.git
 cd orbit
-```
 
-#### 2. Start the Backend (FastAPI)
-Open a terminal and set up the Python environment:
+# Set up your environment variables
+cp backend/.env.example backend/.env
+```
+*Open `backend/.env` and either add a Gemini key OR toggle `USE_LOCAL_LLM=True` if you are using Ollama.*
+
+#### 2. Build the Application
+We've provided a helper script to automatically create virtual environments, install Python/NPM dependencies, and build the frontend:
 ```bash
-cd backend
-python3 -m venv venv
-
-# Activate the virtual environment
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install requirements
-pip install -r requirements.txt
+./build.sh
 ```
 
-**Configure the Environment:**
-Create a `.env` file in the `/backend` directory and add your Google Gemini API key:
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-**Boot the Server:**
+#### 3. Launch
+To instantly boot both the FastAPI backend and React frontend concurrently:
 ```bash
-uvicorn app.main:app --reload --port 8000
+./launch.sh
 ```
-> The backend API is now running securely at `http://localhost:8000`.
-
-#### 3. Start the Frontend (React)
-Open a **new** terminal tab, navigate back to the root `orbit` folder, and install the NPM packages:
-
-```bash
-cd orbit
-npm install
-```
-
-**Launch the App:**
-```bash
-npm run dev
-```
-> The beautiful frontend UI will launch at `http://localhost:5173`. Open this URL in your browser!
+> The beautiful frontend UI will launch in preview mode. Open the provided `http://localhost:4173` URL in your browser!
+> When you're done testing, press `Ctrl+C` in that terminal to gracefully kill both servers.
 
 ---
 
