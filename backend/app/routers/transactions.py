@@ -23,6 +23,7 @@ class TransactionCreate(BaseModel):
     category: str
     type: str
     date: date
+    account_id: Optional[str] = None
 
 router = APIRouter(prefix="/api", tags=["data"])
 
@@ -70,6 +71,7 @@ async def create_transaction(
 
     new_tx = Transaction(
         user_id=current_user.id,
+        account_id=tx_data.account_id,
         description=tx_data.description,
         amount=tx_data.amount,
         category=tx_cat_enum,
@@ -77,6 +79,28 @@ async def create_transaction(
         date=tx_data.date
     )
     db.add(new_tx)
+
+    # Automatically Update Account Balance
+    if tx_data.account_id:
+        acc_result = await db.execute(
+            select(Account).where(Account.id == tx_data.account_id, Account.user_id == current_user.id)
+        )
+        account = acc_result.scalars().first()
+        if account:
+            if tx_type_enum == TransactionType.expense:
+                # Expenses INCREASE credit/loan debt, DECREASE checking/savings
+                if account.type in (AccountType.credit, AccountType.loan):
+                    account.balance += tx_data.amount
+                else:
+                    account.balance -= tx_data.amount
+            elif tx_type_enum == TransactionType.income:
+                # Income DECREASES credit/loan debt, INCREASES checking/savings
+                if account.type in (AccountType.credit, AccountType.loan):
+                    account.balance -= tx_data.amount
+                else:
+                    account.balance += tx_data.amount
+            db.add(account)
+
     await db.commit()
     await db.refresh(new_tx)
     return new_tx.to_dict()

@@ -11,6 +11,8 @@ interface AccountShowcaseProps {
 export function AccountShowcase({ accounts, isLoading, onUpdateAccount }: AccountShowcaseProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
+    const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
+    const [editBalance, setEditBalance] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -82,6 +84,36 @@ export function AccountShowcase({ accounts, isLoading, onUpdateAccount }: Accoun
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save');
             // Keep editing mode open so they can try again or fix the name
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const startEditingBalance = (account: Account) => {
+        setEditingBalanceId(account.id);
+        setEditBalance(account.balance.toString());
+        setError(null);
+    };
+
+    const cancelEditingBalance = () => {
+        setEditingBalanceId(null);
+        setEditBalance('');
+    };
+
+    const saveBalanceEdit = async (id: string) => {
+        if (!onUpdateAccount || !editBalance.trim() || isNaN(Number(editBalance))) {
+            cancelEditingBalance();
+            return;
+        }
+
+        setIsSaving(true);
+        setError(null);
+        try {
+            await onUpdateAccount(id, { balance: Number(editBalance) });
+            setEditingBalanceId(null);
+            setEditBalance('');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to save');
         } finally {
             setIsSaving(false);
         }
@@ -168,9 +200,53 @@ export function AccountShowcase({ accounts, isLoading, onUpdateAccount }: Accoun
                                     )}
                                 </div>
                             )}
-                            <h3 className="text-2xl font-bold tracking-tight">
-                                {formatCurrency(account.balance, account.currency)}
-                            </h3>
+                            {editingBalanceId === account.id ? (
+                                <div className="flex items-center gap-1 mt-1">
+                                    <span className="text-xl font-bold text-muted-foreground">$</span>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={editBalance}
+                                        onChange={(e) => setEditBalance(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') saveBalanceEdit(account.id);
+                                            if (e.key === 'Escape') cancelEditingBalance();
+                                        }}
+                                        disabled={isSaving}
+                                        className={`text-2xl font-bold bg-background/80 border rounded px-2 w-full text-foreground outline-none transition-colors ${error ? 'border-destructive' : 'border-border focus:border-primary'}`}
+                                        autoFocus
+                                    />
+                                    {isSaving ? (
+                                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                                    ) : (
+                                        <div className="flex flex-col gap-0.5">
+                                            <button 
+                                                onClick={() => saveBalanceEdit(account.id)} 
+                                                className="p-1 hover:text-primary text-muted-foreground transition-colors bg-background/50 rounded hover:bg-background/80"
+                                            >
+                                                <Check className="w-3 h-3" />
+                                            </button>
+                                            <button 
+                                                onClick={cancelEditingBalance} 
+                                                className="p-1 hover:text-destructive text-muted-foreground transition-colors bg-background/50 rounded hover:bg-background/80"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <h3 
+                                    className="text-2xl font-bold tracking-tight cursor-pointer hover:text-primary/80 transition-colors group/balance flex items-center gap-2 w-fit"
+                                    onClick={() => onUpdateAccount && startEditingBalance(account)}
+                                    title="Click to edit balance manually"
+                                >
+                                    {formatCurrency(account.balance, account.currency)}
+                                    {onUpdateAccount && (
+                                        <Pencil className="w-3 h-3 opacity-0 group-hover/balance:opacity-100 transition-opacity text-muted-foreground" />
+                                    )}
+                                </h3>
+                            )}
                         </div>
                     </div>
                 ))}

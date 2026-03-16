@@ -7,6 +7,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiFetch } from '../../lib/api';
 import { cn } from '../../lib/utils';
+import { useAccounts } from '../../hooks/useAccounts';
 
 export function AddTransactionModal() {
     const [open, setOpen] = useState(false);
@@ -16,6 +17,10 @@ export function AddTransactionModal() {
     const [category, setCategory] = useState('Food');
     const [type, setType] = useState<'income' | 'expense'>('expense');
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [accountId, setAccountId] = useState('none');
+    
+    // Fetch accounts for the dropdown
+    const { accounts } = useAccounts();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,7 +36,8 @@ export function AddTransactionModal() {
                     description,
                     amount: parseFloat(amount),
                     category: type === 'income' ? 'Income' : category,
-                    type
+                    type,
+                    account_id: accountId === 'none' ? null : accountId
                 })
             });
 
@@ -41,6 +47,7 @@ export function AddTransactionModal() {
             setCategory('Food');
             setType('expense');
             setDate(format(new Date(), 'yyyy-MM-dd'));
+            setAccountId('none');
             setOpen(false);
 
             // Trigger a soft-reload for other components
@@ -157,6 +164,23 @@ export function AddTransactionModal() {
                             </Select>
                         </div>
                     )}
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium">Account</label>
+                        <Select value={accountId} onValueChange={setAccountId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select account" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">None / Manual Ledger</SelectItem>
+                                {accounts.map(acc => (
+                                    <SelectItem key={acc.id} value={acc.id}>
+                                        {acc.name} ({acc.subtype})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
                     <Button type="submit" className="mt-4" disabled={isLoading}>
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
