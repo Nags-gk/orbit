@@ -119,7 +119,7 @@ To instantly boot both the FastAPI backend and React frontend concurrently:
 
 ## 🎒 Usage Guide
 
-1. **Create an Account**: Navigate to `http://localhost:5173` and register a secure profile.
+1. **Create an Account**: Navigate to `http://localhost:4173` and register a secure profile.
 2. **Import Data**: Head to the **Dashboard** and drag a bank statement into the Document Analyzer zone to instantly populate your data!
 3. **Customize**: Navigate to the **Profile** page -> **Appearance** to tweak your colors or enable Dark/Light mode.
 4. **Chat**: Open the **Orbit AI Assistant** in the bottom right corner and click the microphone icon to have it speak to you!
