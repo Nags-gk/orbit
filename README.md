@@ -123,7 +123,19 @@ To instantly boot both the FastAPI backend and React frontend concurrently:
 2. **Import Data**: Head to the **Dashboard** and drag a bank statement into the Document Analyzer zone to instantly populate your data!
 3. **Customize**: Navigate to the **Profile** page -> **Appearance** to tweak your colors or enable Dark/Light mode.
 4. **Chat**: Open the **Orbit AI Assistant** in the bottom right corner and click the microphone icon to have it speak to you!
-5. **Install**: Click the install icon (⊕) in your browser's address bar to install Orbit natively to your device via PWA.
+
+### 📱 Installing on Mobile (iPhone / Android)
+
+Since Orbit is built as a Progressive Web App (PWA) and runs natively on your Wi-Fi `<host>`, you can directly install it to your phone without the App Store:
+
+1. Ensure your MacBook and Mobile device are connected to the **same Wi-Fi network**.
+2. Run `./launch.sh` on your Mac (Ensure line 33 dictates `npm run preview -- --host &`). 
+3. Open Safari (iOS) or Chrome (Android) on your mobile device.
+4. Navigate to your Mac's Local IP address appended by the frontend port (e.g. `http://10.0.0.X:4173`).
+5. **iOS:** Tap the "Share" icon (square with UP arrow) -> Scroll down to **Add to Home Screen**.
+6. **Android:** Tap the three dots (Menu) -> Tap **Add to Home screen** / **Install app**.
+
+Orbit will now appear as a native, full-screen standalone app alongside your other applications!
 
 ---
 

@@ -30,7 +30,8 @@ sleep 2
 echo "🟢 Starting Frontend PWA Server (Port 4173)..."
 echo "🌐 You can access the application at: http://localhost:4173"
 echo ""
-npm run preview &
+npm run preview -- --host &
+
 
 # Keep script running and wait for user to gracefully terminate
 echo "✨ Orbit is currently running! Press Ctrl+C to stop both servers."
