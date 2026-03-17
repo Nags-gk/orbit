@@ -20,7 +20,6 @@
 ## 📖 Table of Contents
 - [Overview](#-overview)
 - [Key Features](#-key-features)
-- [Recent Updates](#-recent-updates)
 - [Technology Stack](#-technology-stack)
 - [Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
@@ -82,22 +81,6 @@ Unlike traditional budgeting apps that rely on tedious manual entry, Orbit utili
 ### 📱 Progressive Web App (PWA)
 *   **Installable**: Install Orbit as a standalone app on your desktop (macOS/Windows) or mobile device (iOS/Android) directly from your browser.
 *   **Offline Capabilities**: Intelligent Service Worker caching allows Orbit to load incredibly fast and serve key assets even gracefully offline.
-
----
-
-## 🆕 Recent Updates
-
-| Date | Change | Description |
-| :--- | :--- | :--- |
-| **Mar 16, 2026** | 🐛 **Python 3.9 Fix** | Fixed a critical backend crash caused by Python 3.10+ syntax (`list[dict] \| None`) in `local_llm.py`. Added `from __future__ import annotations` for backward compatibility. |
-| **Mar 16, 2026** | 🔧 **Gemini Key Fix** | Fixed Gemini API key resolution — the backend was reading from `os.getenv()` instead of the centralized `config.py` settings, causing it to always fall back to demo mode. |
-| **Mar 16, 2026** | ✨ **Add Account UI** | New **"+ Add Account"** modal on the dashboard. Users can manually create credit cards, checking, savings, investment, and loan accounts without using the AI chat. |
-| **Mar 16, 2026** | ✨ **Account-Linked Transactions** | Transactions can now be linked to a specific account. The selected account's balance is automatically adjusted (debit/credit logic) when a transaction is created. |
-| **Mar 16, 2026** | ✨ **Inline Balance Editing** | Click any account balance on the homepage to directly edit it in-place. |
-| **Mar 16, 2026** | ✨ **Transaction Modals** | Premium segmented control for Expense/Income toggle. Edit and Delete modals with improved UX. |
-| **Mar 15, 2026** | 🔒 **Local LLM Support** | Full offline AI mode using Ollama or LM Studio with OpenAI-compatible SDK. |
-| **Mar 15, 2026** | 📝 **Build & Launch Scripts** | Added `build.sh` and `launch.sh` for one-command setup and launch. |
-| **Mar 15, 2026** | 📱 **Mobile PWA** | Frontend now binds to network host for mobile access. Full PWA install instructions. |
 
 ---
 
