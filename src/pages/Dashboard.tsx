@@ -17,7 +17,7 @@ import { useAccounts } from '../hooks/useAccounts';
 export default function Dashboard() {
     const { insights, forecast, isLoading: insightsLoading, refresh: refreshInsights } = useInsights();
     const { summary, isLoading: statsLoading, refresh: refreshStats } = useDashboardStats();
-    const { accounts, isLoading: accountsLoading, refresh: refreshAccounts, updateAccount } = useAccounts();
+    const { accounts, isLoading: accountsLoading, refresh: refreshAccounts, updateAccount, addAccount } = useAccounts();
 
     useEffect(() => {
         window.addEventListener('transaction-added', refreshStats);
@@ -92,7 +92,7 @@ export default function Dashboard() {
 
                 {/* Account & Investment Breakdown */}
                 <FadeInView>
-                    <AccountShowcase accounts={accounts} isLoading={accountsLoading} onUpdateAccount={updateAccount} />
+                    <AccountShowcase accounts={accounts} isLoading={accountsLoading} onUpdateAccount={updateAccount} onAddAccount={addAccount} />
                 </FadeInView>
 
                 {/* Net Worth + Savings Goals side-by-side */}

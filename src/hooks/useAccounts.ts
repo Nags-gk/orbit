@@ -17,6 +17,7 @@ interface UseAccountsReturn {
     error: string | null;
     refresh: () => void;
     updateAccount: (id: string, updates: Partial<Pick<Account, 'name' | 'balance'>>) => Promise<void>;
+    addAccount: (account: Partial<Account>) => Promise<void>;
 }
 
 export function useAccounts(): UseAccountsReturn {
@@ -53,6 +54,21 @@ export function useAccounts(): UseAccountsReturn {
         }
     }, []);
 
+    const addAccount = useCallback(async (account: Partial<Account>) => {
+        try {
+            const created = await apiFetch('/accounts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(account),
+            });
+            setAccounts(prev => [...prev, created].sort((a, b) => a.type.localeCompare(b.type)));
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Create failed';
+            setError(errorMessage);
+            throw err;
+        }
+    }, []);
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -63,6 +79,7 @@ export function useAccounts(): UseAccountsReturn {
         error,
         refresh: fetchData,
         updateAccount,
+        addAccount,
     };
 }
 

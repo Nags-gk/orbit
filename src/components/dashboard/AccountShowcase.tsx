@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { CreditCard, Landmark, LineChart, Wallet, Pencil, Check, X, Loader2 } from 'lucide-react';
 import type { Account } from '../../hooks/useAccounts';
+import { AddAccountModal } from './AddAccountModal';
 
 interface AccountShowcaseProps {
     accounts: Account[];
     isLoading: boolean;
     onUpdateAccount?: (id: string, updates: Partial<Pick<Account, 'name' | 'balance'>>) => Promise<void>;
+    onAddAccount?: (account: Partial<Account>) => Promise<void>;
 }
 
-export function AccountShowcase({ accounts, isLoading, onUpdateAccount }: AccountShowcaseProps) {
+export function AccountShowcase({ accounts, isLoading, onUpdateAccount, onAddAccount }: AccountShowcaseProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
@@ -19,7 +21,10 @@ export function AccountShowcase({ accounts, isLoading, onUpdateAccount }: Accoun
     if (isLoading) {
         return (
             <div className="space-y-4">
-                <h2 className="text-xl font-semibold tracking-tight">Accounts & Investments</h2>
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold tracking-tight">Accounts & Investments</h2>
+                    {onAddAccount && <AddAccountModal onAddAccount={onAddAccount} />}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
                     {[1, 2, 3, 4].map(i => (
                         <div key={i} className="h-36 bg-card rounded-xl border border-border" />
@@ -121,7 +126,10 @@ export function AccountShowcase({ accounts, isLoading, onUpdateAccount }: Accoun
 
     return (
         <div className="space-y-4">
-            <h2 className="text-xl font-semibold tracking-tight">Accounts & Investments</h2>
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold tracking-tight">Accounts & Investments</h2>
+                {onAddAccount && <AddAccountModal onAddAccount={onAddAccount} />}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {accounts.map((account) => (
                     <div
