@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreditCard, Landmark, LineChart, Wallet, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { CreditCard, Landmark, LineChart, Wallet, Pencil, Check, X, Loader2, Trash2 } from 'lucide-react';
 import type { Account } from '../../hooks/useAccounts';
 import { AddAccountModal } from './AddAccountModal';
 
@@ -8,15 +8,17 @@ interface AccountShowcaseProps {
     isLoading: boolean;
     onUpdateAccount?: (id: string, updates: Partial<Pick<Account, 'name' | 'balance'>>) => Promise<void>;
     onAddAccount?: (account: Partial<Account>) => Promise<void>;
+    onDeleteAccount?: (id: string) => Promise<void>;
 }
 
-export function AccountShowcase({ accounts, isLoading, onUpdateAccount, onAddAccount }: AccountShowcaseProps) {
+export function AccountShowcase({ accounts, isLoading, onUpdateAccount, onAddAccount, onDeleteAccount }: AccountShowcaseProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
     const [editBalance, setEditBalance] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     if (isLoading) {
         return (
@@ -146,6 +148,33 @@ export function AccountShowcase({ accounts, isLoading, onUpdateAccount, onAddAcc
                             <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground border border-border/50">
                                 {account.subtype}
                             </span>
+                            {onDeleteAccount && (
+                                confirmDeleteId === account.id ? (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeleteAccount(account.id);
+                                            setConfirmDeleteId(null);
+                                        }}
+                                        className="text-[10px] font-bold px-2 py-1 rounded-full bg-destructive text-destructive-foreground border border-destructive/50 animate-pulse transition-all"
+                                        title="Click again to confirm deletion"
+                                    >
+                                        Sure?
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setConfirmDeleteId(account.id);
+                                            setTimeout(() => setConfirmDeleteId(null), 3000);
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive text-muted-foreground transition-all"
+                                        title="Delete account"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                )
+                            )}
                         </div>
 
                         <div className="space-y-1">

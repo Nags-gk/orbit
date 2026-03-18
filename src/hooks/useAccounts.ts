@@ -18,6 +18,7 @@ interface UseAccountsReturn {
     refresh: () => void;
     updateAccount: (id: string, updates: Partial<Pick<Account, 'name' | 'balance'>>) => Promise<void>;
     addAccount: (account: Partial<Account>) => Promise<void>;
+    deleteAccount: (id: string) => Promise<void>;
 }
 
 export function useAccounts(): UseAccountsReturn {
@@ -69,6 +70,19 @@ export function useAccounts(): UseAccountsReturn {
         }
     }, []);
 
+    const deleteAccount = useCallback(async (id: string) => {
+        try {
+            await apiFetch(`/accounts/${id}`, {
+                method: 'DELETE',
+            });
+            setAccounts(prev => prev.filter(a => a.id !== id));
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Delete failed';
+            setError(errorMessage);
+            throw err;
+        }
+    }, []);
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -80,6 +94,7 @@ export function useAccounts(): UseAccountsReturn {
         refresh: fetchData,
         updateAccount,
         addAccount,
+        deleteAccount,
     };
 }
 
