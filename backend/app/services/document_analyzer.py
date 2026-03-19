@@ -47,7 +47,7 @@ def analyze_financial_document(file_bytes: bytes, mime_type: str) -> list[dict]:
         return _local_analyze_financial_document(file_bytes, mime_type, prompt)
         
     # ── Gemini Pipeline ──
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = settings.gemini_api_key
     if not api_key:
         raise ValueError("GEMINI_API_KEY environment variable is not set. Cannot use AI Document Analyzer.")
             

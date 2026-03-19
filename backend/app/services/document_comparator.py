@@ -9,6 +9,7 @@ import os
 import json
 from collections import defaultdict
 from typing import Optional
+from .local_llm import settings
 
 
 def compare_document_extractions(doc_extractions: list[dict]) -> dict:
@@ -185,7 +186,7 @@ def generate_narrative_summary(comparison: dict) -> Optional[str]:
     Use Gemini to generate a natural language narrative from comparison data.
     Returns None if API key not available.
     """
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = settings.gemini_api_key
     if not api_key:
         return None
     
