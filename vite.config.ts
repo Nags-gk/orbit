@@ -50,7 +50,7 @@ export default defineConfig({
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60,
               },
-              networkTimeoutSeconds: 5,
+              // Disabled explicit timeout to allow long-running AI AI Analysis
               cacheableResponse: {
                 statuses: [0, 200],
               },
