@@ -6,9 +6,10 @@ from datetime import date
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, BackgroundTasks
 
 from ..database import async_session
-from ..models import Transaction, TransactionType, TransactionCategory, User, Document
+from ..models import Transaction, TransactionType, TransactionCategory, User, Document, Account, AccountType
 from ..services.security import get_current_user
 from ..services.document_analyzer import analyze_financial_document
+from typing import Dict, Any, List
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
@@ -82,15 +83,28 @@ async def upload_document(
 
 @router.post("/confirm")
 async def confirm_transactions(
-    transactions: list[dict],
+    request: Dict[str, Any],
     current_user: User = Depends(get_current_user)
 ):
     """
-    Legacy catch: Save confirmed extracted transactions to the database.
+    Save confirmed extracted transactions to the database, optionally linking to an account.
     """
+    transactions = request.get("transactions", [])
+    account_id = request.get("account_id")
+    
     saved = []
     skipped = 0
+    
     async with async_session() as db:
+        # Get the account if provided for balance updates
+        account = None
+        if account_id:
+            from sqlalchemy import select
+            acc_result = await db.execute(
+                select(Account).where(Account.id == account_id, Account.user_id == current_user.id)
+            )
+            account = acc_result.scalars().first()
+
         for tx_data in transactions:
             try:
                 # Extract and normalize fields
@@ -98,8 +112,8 @@ async def confirm_transactions(
                 amount_val = float(tx_data.get("amount", 0))
                 desc_val = tx_data.get("description", "Imported transaction").strip()
                 
-                # Deduplication Check: Look for existing tx with same date, amount, and similar description
-                # We use a simple case-insensitive exact match for now, or startswith
+                # Deduplication Check
+                from sqlalchemy import select
                 stmt = (
                     select(Transaction)
                     .where(Transaction.user_id == current_user.id)
@@ -111,7 +125,6 @@ async def confirm_transactions(
                 
                 is_duplicate = False
                 for existing in existing_txs:
-                    # Simple fuzzy check: if one description contains the other or they match case-insensitively
                     e_desc = existing.description.lower()
                     n_desc = desc_val.lower()
                     if e_desc == n_desc or n_desc in e_desc or e_desc in n_desc:
@@ -124,16 +137,22 @@ async def confirm_transactions(
 
                 # Map category string to enum
                 cat_str = tx_data.get("category", "Shopping")
+                category = TransactionCategory.Shopping
                 try:
                     category = TransactionCategory(cat_str)
                 except ValueError:
-                    category = TransactionCategory.Shopping
+                    # Try case-insensitive fallback
+                    for c in TransactionCategory:
+                        if c.value.lower() == cat_str.lower():
+                            category = c
+                            break
 
                 type_str = tx_data.get("type", "expense")
                 tx_type = TransactionType.income if type_str == "income" else TransactionType.expense
 
                 tx = Transaction(
                     user_id=current_user.id,
+                    account_id=account_id,
                     description=desc_val,
                     amount=amount_val,
                     category=category,
@@ -142,9 +161,27 @@ async def confirm_transactions(
                 )
                 db.add(tx)
                 saved.append(tx_data)
-            except Exception:
-                continue  # Skip invalid transactions
 
+                # Track balance update if account is present
+                if account:
+                    if tx_type == TransactionType.expense:
+                        if account.type in (AccountType.credit, AccountType.loan):
+                            account.balance += amount_val
+                        else:
+                            account.balance -= amount_val
+                    else: # Income
+                        if account.type in (AccountType.credit, AccountType.loan):
+                            account.balance -= amount_val
+                        else:
+                            account.balance += amount_val
+
+            except Exception as e:
+                print(f"Error importing document transaction: {e}")
+                continue
+
+        if account:
+            db.add(account)
+            
         await db.commit()
 
     return {

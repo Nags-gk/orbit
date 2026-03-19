@@ -24,7 +24,7 @@ interface UseDocumentAIReturn {
     uploadResult: UploadResult | null;
     error: string | null;
     uploadDocument: (file: File) => Promise<void>;
-    confirmTransactions: (transactions: ExtractedTransaction[]) => Promise<any>;
+    confirmTransactions: (transactions: ExtractedTransaction[], accountId?: string) => Promise<any>;
     clearResult: () => void;
 }
 
@@ -56,14 +56,15 @@ export function useDocumentAI(): UseDocumentAIReturn {
         }
     }, []);
 
-    const confirmTransactions = useCallback(async (transactions: ExtractedTransaction[]) => {
+    const confirmTransactions = useCallback(async (transactions: ExtractedTransaction[], accountId?: string) => {
         setIsConfirming(true);
         setError(null);
 
         try {
             const result = await apiFetch('/documents/confirm', {
                 method: 'POST',
-                body: JSON.stringify(transactions),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transactions, account_id: accountId }),
             });
 
             // Dispatch event so Dashboard or other components can refresh

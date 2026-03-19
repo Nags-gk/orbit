@@ -20,9 +20,14 @@ export default function Dashboard() {
     const { accounts, isLoading: accountsLoading, refresh: refreshAccounts, updateAccount, addAccount, deleteAccount } = useAccounts();
 
     useEffect(() => {
-        window.addEventListener('transaction-added', refreshStats);
-        return () => window.removeEventListener('transaction-added', refreshStats);
-    }, [refreshStats]);
+        const handleTransactionAdded = () => {
+            refreshStats();
+            refreshAccounts();
+            refreshInsights();
+        };
+        window.addEventListener('transaction-added', handleTransactionAdded);
+        return () => window.removeEventListener('transaction-added', handleTransactionAdded);
+    }, [refreshStats, refreshAccounts, refreshInsights]);
 
     const isLoading = insightsLoading || statsLoading || accountsLoading;
     const handleRefresh = () => {
