@@ -37,7 +37,21 @@ export function AccountShowcase({ accounts, isLoading, onUpdateAccount, onAddAcc
     }
 
     if (accounts.length === 0) {
-        return null;
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold tracking-tight">Accounts & Investments</h2>
+                    {onAddAccount && <AddAccountModal onAddAccount={onAddAccount} />}
+                </div>
+                <div className="rounded-xl border border-dashed border-border bg-foreground/5 p-8 text-center flex flex-col items-center justify-center">
+                    <Wallet className="w-8 h-8 text-muted-foreground mb-3 opacity-50" />
+                    <h3 className="text-lg font-medium text-foreground mb-1">No Accounts Yet</h3>
+                    <p className="text-sm text-muted-foreground max-w-sm">
+                        Get started by adding your first checking, savings, or investment account to track your balances.
+                    </p>
+                </div>
+            </div>
+        );
     }
 
     const getIcon = (type: string) => {
