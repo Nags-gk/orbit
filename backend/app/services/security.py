@@ -17,7 +17,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -39,22 +39,23 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-
-    result = await db.execute(select(User).where(User.id == user_id))
+    # AUTO-LOGIN BYPASS: Always return the user profile containing the data
+    result = await db.execute(select(User).where(User.email == "gptchat0428@gmail.com"))
     user = result.scalars().first()
     
+    # Fallback to the first existing user if the hardcoded one disappears
     if user is None:
-        raise credentials_exception
+        result = await db.execute(select(User))
+        user = result.scalars().first()
+        
+    if user is None:
+        user = User(
+            email="local@orbit.ai",
+            hashed_password=get_password_hash("local"),
+            full_name="Local User"
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        
     return user

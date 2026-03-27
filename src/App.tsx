@@ -1,5 +1,5 @@
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -8,12 +8,10 @@ import Intelligence from './pages/Intelligence';
 import Budgets from './pages/Budgets';
 import BillCalendar from './pages/BillCalendar';
 import Profile from './pages/Profile';
-import Auth from './pages/Auth';
 import DocumentCompare from './components/documents/DocumentCompare';
 import Reports from './pages/Reports';
 
 import { useAuthStore } from './store/authStore';
-import { Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './components/layout/ThemeProvider';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -32,7 +30,7 @@ function App() {
     <ThemeProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Auth />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
 
           <Route path="/" element={
             <ProtectedRoute>

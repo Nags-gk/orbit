@@ -1,6 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { apiFetch } from '../lib/api';
 
 interface User {
     id: string;
@@ -19,32 +17,23 @@ interface AuthState {
     updateUser: (user: User) => void;
 }
 
+const localUser: User = { 
+    id: "local-user-id", 
+    email: "local@orbit.ai", 
+    fullName: "Local User" 
+};
+
 export const useAuthStore = create<AuthState>()(
-    persist(
-        (set, get) => ({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-            login: (token, user) => set({ token, user, isAuthenticated: true }),
-            logout: () => set({ token: null, user: null, isAuthenticated: false }),
-            updateUser: (user) => set({ user }),
-            checkAuth: async () => {
-                const { token } = get();
-                if (!token) {
-                    set({ isAuthenticated: false, user: null });
-                    return;
-                }
-                try {
-                    const userData = await apiFetch('/auth/me');
-                    set({ user: userData, isAuthenticated: true });
-                } catch {
-                    // Token expired or invalid
-                    set({ token: null, user: null, isAuthenticated: false });
-                }
-            }
-        }),
-        {
-            name: 'auth-storage', // saves to localStorage
+    (set) => ({
+        user: localUser,
+        token: "local-bypass-token",
+        isAuthenticated: true,
+        login: (token, user) => set({ token, user, isAuthenticated: true }),
+        logout: () => set({ token: "local-bypass-token", user: localUser, isAuthenticated: true }),
+        updateUser: (user) => set({ user }),
+        checkAuth: async () => {
+            // Auto-login bypass
+            set({ isAuthenticated: true, user: localUser, token: "local-bypass-token" });
         }
-    )
+    })
 );
