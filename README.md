@@ -95,7 +95,7 @@ Unlike traditional budgeting apps that rely on tedious manual entry, Orbit utili
 | **Backend Server** | Python 3.9+, FastAPI, Uvicorn |
 | **Database & ORM** | SQLite (Async `aiosqlite`), SQLAlchemy 2.0 |
 | **AI Processing** | Google Gemini 2.5 Flash (`google-genai`), Anthropic Claude (`anthropic`), OR Local LLMs via Ollama (`openai` SDK) |
-| **Authentication** | JWT (JSON Web Tokens) via `python-jose` |
+| **Authentication** | Disabled for frictionless local-only access (No login required) |
 | **PWA** | Vite PWA Plugin, Service Workers |
 
 ---
@@ -184,7 +184,7 @@ To instantly boot both the FastAPI backend and React frontend concurrently:
 
 ## 🎒 Usage Guide
 
-1. **Create an Account**: Navigate to `http://localhost:4173` and register a secure profile.
+1. **Access the Dashboard**: Navigate to `http://localhost:4173`. Orbit runs entirely local-first, meaning there is no registration barrier—you are instantly authenticated into your private, single-user dashboard!
 2. **Add Your Financial Accounts**: Click the **"+ Add Account"** button on the dashboard to add your credit cards, checking accounts, savings, investments, etc.
 3. **Log Transactions**: Click **"Add Transaction"** → select Expense or Income → choose the linked account → the account balance updates automatically!
 4. **Import Data**: Drag a bank statement (PDF, CSV, image) into the **Document Analyzer** zone on the Dashboard to instantly populate transactions.
