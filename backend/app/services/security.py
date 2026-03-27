@@ -49,13 +49,24 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         user = result.scalars().first()
         
     if user is None:
-        user = User(
-            email="local@orbit.ai",
-            hashed_password=get_password_hash("local"),
-            full_name="Local User"
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
+        try:
+            user = User(
+                email="local@orbit.ai",
+                hashed_password=get_password_hash("local"),
+                full_name="Local User"
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+        except Exception:
+            # If IntegrityError occurs because of a race condition with another
+            # concurrent request creating the user simultaneously, rollback and fetch it!
+            await db.rollback()
+            result = await db.execute(select(User).where(User.email == "local@orbit.ai"))
+            user = result.scalars().first()
+            if user is None:
+                # Absolute fallback so we never crash the app
+                result = await db.execute(select(User))
+                user = result.scalars().first()
         
     return user

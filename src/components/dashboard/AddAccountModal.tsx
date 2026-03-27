@@ -122,7 +122,7 @@ export function AddAccountModal({ onAddAccount }: AddAccountModalProps) {
                         />
                     </div>
 
-                    <Button type="submit" className="mt-4 w-full" disabled={isLoading}>
+                    <Button type="submit" onClick={handleSubmit} className="mt-4 w-full" disabled={isLoading}>
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                         Create Account
                     </Button>
