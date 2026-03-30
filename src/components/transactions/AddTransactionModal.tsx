@@ -180,7 +180,32 @@ export function AddTransactionModal() {
                                 ))}
                             </SelectContent>
                         </Select>
+                        
+                        {/* Dynamic Impact Label */}
+                        {accountId !== 'none' && (
+                            <div className="mt-1 px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 transition-all duration-300">
+                                <p className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    {(() => {
+                                        const acc = accounts.find(a => a.id === accountId);
+                                        if (!acc) return "Standard ledger entry.";
+                                        
+                                        const isCredit = acc.type === 'credit' || acc.type === 'loan';
+                                        if (type === 'expense') {
+                                            return isCredit 
+                                                ? "This will INCREASE your debt balance (you owe more)." 
+                                                : "This will REDUCE your available cash balance.";
+                                        } else {
+                                            return isCredit 
+                                                ? "This will REDUCE your debt balance (pay off card)." 
+                                                : "This will INCREASE your available cash balance.";
+                                        }
+                                    })()}
+                                </p>
+                            </div>
+                        )}
                     </div>
+
 
                     <Button type="submit" className="mt-4" disabled={isLoading}>
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

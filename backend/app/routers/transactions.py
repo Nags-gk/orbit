@@ -28,18 +28,35 @@ class TransactionCreate(BaseModel):
 router = APIRouter(prefix="/api", tags=["data"])
 
 
+from sqlalchemy.orm import joinedload
+
 @router.get("/transactions")
 async def list_transactions(
+    account_type: Optional[str] = None,
     db: AsyncSession = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
-    result = await db.execute(
-        select(Transaction)
-        .where(Transaction.user_id == current_user.id)
-        .order_by(Transaction.date.desc())
-        .limit(100)
-    )
-    return [tx.to_dict() for tx in result.scalars().all()]
+    stmt = select(Transaction).options(joinedload(Transaction.account)).where(Transaction.user_id == current_user.id)
+    
+    if account_type:
+        stmt = stmt.join(Account).where(Account.type == account_type)
+        
+    result = await db.execute(stmt.order_by(Transaction.date.desc()).limit(150))
+    transactions = result.scalars().all()
+    
+    output = []
+    for tx in transactions:
+        d = tx.to_dict()
+        if tx.account:
+            d["accountName"] = tx.account.name
+            d["accountType"] = tx.account.type.value
+        else:
+            d["accountName"] = "Manual / Unlinked"
+            d["accountType"] = "other"
+        output.append(d)
+        
+    return output
+
 
 @router.post("/transactions")
 async def create_transaction(

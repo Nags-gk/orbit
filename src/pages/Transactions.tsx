@@ -15,6 +15,8 @@ interface Transaction {
     category: string;
     type: 'income' | 'expense';
     date: string;
+    accountName: string;
+    accountType: string;
 }
 
 
@@ -23,6 +25,7 @@ export default function Transactions() {
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('all');
+    const [activeTab, setActiveTab] = useState<'all' | 'depository' | 'credit' | 'other'>('all');
     const [sortKey, setSortKey] = useState<'date' | 'amount'>('date');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
@@ -42,7 +45,14 @@ export default function Transactions() {
         return () => window.removeEventListener('transaction-added', fetchData);
     }, [fetchData]);
 
-    const filtered = transactions.filter(tx => {
+    const filteredByTab = transactions.filter(tx => {
+        if (activeTab === 'all') return true;
+        if (activeTab === 'depository') return tx.accountType === 'depository';
+        if (activeTab === 'credit') return tx.accountType === 'credit';
+        return tx.accountType !== 'depository' && tx.accountType !== 'credit';
+    });
+
+    const filtered = filteredByTab.filter(tx => {
         const matchesSearch = tx.description.toLowerCase().includes(search.toLowerCase());
         const matchesCategory = categoryFilter === 'all' || tx.category === categoryFilter;
         return matchesSearch && matchesCategory;
@@ -64,8 +74,15 @@ export default function Transactions() {
     };
 
     const categories = [...new Set(transactions.map(t => t.category))].sort();
-    const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const totalIncome = filteredByTab.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const totalExpenses = filteredByTab.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+    const tabs = [
+        { id: 'all', label: 'All Activity' },
+        { id: 'depository', label: 'Debit / Cash' },
+        { id: 'credit', label: 'Credit Cards' },
+        { id: 'other', label: 'Others' }
+    ] as const;
 
     return (
         <AnimatedPage>
@@ -86,19 +103,39 @@ export default function Transactions() {
                     </button>
                 </div>
 
+                {/* Tabs */}
+                <div className="flex items-center p-1 rounded-xl bg-foreground/5 border border-border w-fit">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={cn(
+                                "px-4 py-2 text-sm font-medium rounded-lg transition-all",
+                                activeTab === tab.id 
+                                    ? "bg-primary text-white shadow-lg"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
                 {/* Summary */}
                 <StaggerContainer className="grid gap-4 md:grid-cols-3">
                     <StaggerItem>
                         <div className="rounded-xl border border-border bg-foreground/5 p-4">
-                            <p className="text-xs text-muted-foreground mb-1">Total Transactions</p>
-                            <p className="text-2xl font-bold text-foreground">{transactions.length}</p>
+                            <p className="text-xs text-muted-foreground mb-1">
+                                {activeTab === 'all' ? 'Total Transactions' : `${tabs.find(t => t.id === activeTab)?.label} Count`}
+                            </p>
+                            <p className="text-2xl font-bold text-foreground">{filteredByTab.length}</p>
                         </div>
                     </StaggerItem>
                     <StaggerItem>
                         <div className="rounded-xl border border-emerald-500/30 dark:border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5 p-4">
                             <div className="flex items-center gap-1 mb-1">
                                 <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                                <p className="text-xs text-muted-foreground">Income</p>
+                                <p className="text-xs text-muted-foreground">Inflow</p>
                             </div>
                             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                         </div>
@@ -107,7 +144,7 @@ export default function Transactions() {
                         <div className="rounded-xl border border-red-500/30 dark:border-red-500/20 bg-red-500/10 dark:bg-red-500/5 p-4">
                             <div className="flex items-center gap-1 mb-1">
                                 <TrendingDown className="w-3 h-3 text-red-600 dark:text-red-400" />
-                                <p className="text-xs text-muted-foreground">Expenses</p>
+                                <p className="text-xs text-muted-foreground">Outflow</p>
                             </div>
                             <p className="text-2xl font-bold text-red-600 dark:text-red-400">${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                         </div>
@@ -143,11 +180,13 @@ export default function Transactions() {
                     <div className="flex items-center justify-center py-20">
                         <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                     </div>
-                ) : transactions.length === 0 ? (
+                ) : sorted.length === 0 ? (
                     <EmptyState
                         icon="transactions"
-                        title="No transactions yet"
-                        description="Start by adding your first transaction. You can also upload bank statements to automatically import your history."
+                        title="No transactions found"
+                        description={activeTab === 'all' 
+                            ? "Start by adding your first transaction." 
+                            : `No transactions match the ${activeTab} filter.`}
                         actionLabel="Add Transaction"
                     />
                 ) : (
@@ -162,6 +201,7 @@ export default function Transactions() {
                                         </button>
                                     </th>
                                     <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Description</th>
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Account</th>
                                     <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Category</th>
                                     <th className="text-right px-4 py-3">
                                         <button onClick={() => toggleSort('amount')} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors ml-auto">
@@ -184,7 +224,19 @@ export default function Transactions() {
                                         <td className="px-4 py-3 text-sm text-muted-foreground">
                                             {format(new Date(`${tx.date}T12:00:00`), 'd MMM yy')}
                                         </td>
-                                        <td className="px-4 py-3 text-sm font-medium text-foreground">{tx.description}</td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium text-foreground">{tx.description}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className={cn(
+                                                "text-[10px] px-2 py-0.5 rounded-full font-medium border",
+                                                tx.accountType === 'credit' ? "bg-orange-500/10 text-orange-600 border-orange-500/20" : "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                                            )}>
+                                                {tx.accountName}
+                                            </span>
+                                        </td>
                                         <td className="px-4 py-3">
                                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-foreground/10 text-muted-foreground font-medium">
                                                 {tx.category}
@@ -203,16 +255,11 @@ export default function Transactions() {
                                 ))}
                             </tbody>
                         </table>
-
-                        {sorted.length === 0 && (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <p className="text-sm text-muted-foreground">No transactions match your filters</p>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
         </AnimatedPage>
     );
 }
+
 
