@@ -153,10 +153,12 @@ async def update_transaction(
     tx.category = tx_cat_enum
     tx.type = tx_type_enum
     tx.date = tx_data.date
+    tx.account_id = tx_data.account_id
 
     await db.commit()
     await db.refresh(tx)
     return tx.to_dict()
+
 
 @router.delete("/transactions/{transaction_id}")
 async def delete_transaction(

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Loader2, Pencil, Trash2 } from 'lucide-react';
 import { apiFetch } from '../../lib/api';
 import { cn } from '../../lib/utils';
+import { useAccounts } from '../../hooks/useAccounts';
 
 export function EditTransactionModal({ transaction }: { transaction: any }) {
     const [open, setOpen] = useState(false);
@@ -14,6 +15,8 @@ export function EditTransactionModal({ transaction }: { transaction: any }) {
     const [description, setDescription] = useState(transaction.description);
     const [category, setCategory] = useState(transaction.category);
     const [type, setType] = useState<'income' | 'expense'>(transaction.type);
+    const { accounts } = useAccounts();
+    const [accountId, setAccountId] = useState(transaction.accountId || 'none');
     const [date, setDate] = useState(transaction.date);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -31,7 +34,8 @@ export function EditTransactionModal({ transaction }: { transaction: any }) {
                     description,
                     amount: parseFloat(amount),
                     category: type === 'income' ? 'Income' : category,
-                    type
+                    type,
+                    account_id: accountId === 'none' ? null : accountId
                 })
             });
 
@@ -43,6 +47,7 @@ export function EditTransactionModal({ transaction }: { transaction: any }) {
             setIsLoading(false);
         }
     };
+
 
     const handleDelete = async () => {
         if (!window.confirm('Are you sure you want to delete this transaction?')) return;
@@ -69,6 +74,7 @@ export function EditTransactionModal({ transaction }: { transaction: any }) {
                 setCategory(transaction.category);
                 setType(transaction.type);
                 setDate(transaction.date);
+                setAccountId(transaction.accountId || 'none');
             }
             setOpen(isOpen);
         }}>
@@ -166,6 +172,47 @@ export function EditTransactionModal({ transaction }: { transaction: any }) {
                             </Select>
                         </div>
                     )}
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium">Account</label>
+                        <Select value={accountId} onValueChange={setAccountId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select account" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">None / Manual Ledger</SelectItem>
+                                {accounts.map(acc => (
+                                    <SelectItem key={acc.id} value={acc.id}>
+                                        {acc.name} ({acc.subtype})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        
+                        {/* Dynamic Impact Label */}
+                        {accountId !== 'none' && (
+                            <div className="mt-1 px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 transition-all duration-300">
+                                <p className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    {(() => {
+                                        const acc = accounts.find(a => a.id === accountId);
+                                        if (!acc) return "Standard ledger entry.";
+                                        
+                                        const isCredit = acc.type === 'credit' || acc.type === 'loan';
+                                        if (type === 'expense') {
+                                            return isCredit 
+                                                ? "This will INCREASE your debt balance (you owe more)." 
+                                                : "This will REDUCE your available cash balance.";
+                                        } else {
+                                            return isCredit 
+                                                ? "This will REDUCE your debt balance (pay off card)." 
+                                                : "This will INCREASE your available cash balance.";
+                                        }
+                                    })()}
+                                </p>
+                            </div>
+                        )}
+                    </div>
 
                     <div className="flex gap-3 mt-4">
                         <Button 
