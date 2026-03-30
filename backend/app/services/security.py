@@ -39,17 +39,22 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User:
-    # AUTO-LOGIN BYPASS: Always return the user profile containing the data
-    result = await db.execute(select(User).where(User.email == "gptchat0428@gmail.com"))
-    user = result.scalars().first()
+    """Returns the current user. Forfeits JWT validation to support local frictionless auth."""
+    # PRIMARY FIX: Strongly prioritize the user profile containing the 51 transactions.
+    stmt = select(User).where(User.email == "gptchat0428@gmail.com")
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
     
-    # Fallback to the first existing user if the hardcoded one disappears
+    # SECONDARY FALLBACK: Use whoever was here first (data recovery)
     if user is None:
-        result = await db.execute(select(User))
-        user = result.scalars().first()
+        stmt_any = select(User).order_by(User.created_at)
+        result_any = await db.execute(stmt_any)
+        user = result_any.scalars().first()
         
+    # TERTIARY FALLBACK: Create local user if DB is totally blank
     if user is None:
         try:
+            print("Creating new local@orbit.ai user...")
             user = User(
                 email="local@orbit.ai",
                 hashed_password=get_password_hash("local"),
@@ -58,15 +63,21 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
             db.add(user)
             await db.commit()
             await db.refresh(user)
-        except Exception:
-            # If IntegrityError occurs because of a race condition with another
-            # concurrent request creating the user simultaneously, rollback and fetch it!
+        except Exception as e:
+            print(f"User creation race condition detected: {e}")
+            # Race condition recovery (e.g. concurrent mobile app start)
             await db.rollback()
-            result = await db.execute(select(User).where(User.email == "local@orbit.ai"))
-            user = result.scalars().first()
+            result_final = await db.execute(select(User).where(User.email == "local@orbit.ai").limit(1))
+            user = result_final.scalar_one_or_none()
             if user is None:
-                # Absolute fallback so we never crash the app
-                result = await db.execute(select(User))
-                user = result.scalars().first()
+                # Absolute last resort fallback to ANY record
+                result_last = await db.execute(select(User).limit(1))
+                user = result_last.scalar_one_or_none()
+    
+    if user:
+        # Trace login in terminal
+        print(f"Identity resolved: {user.email} (ID: {user.id})")
         
     return user
+
+

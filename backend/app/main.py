@@ -36,11 +36,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow the Vite dev server
+# CORS — allow for broad local network usage (IPs, phone access)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False, # Standardized to False for '*' cross-origin with fetch
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -58,8 +58,19 @@ app.include_router(goals.router)
 app.include_router(reports.router)
 
 
+@app.get("/")
+async def root():
+    """Simple API root for easy backend discovery."""
+    return {
+        "app": "Orbit AI Backend",
+        "status": "ready",
+        "documentation": "/docs"
+    }
+
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "version": "0.1.0"}
+
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
