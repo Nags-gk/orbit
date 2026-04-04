@@ -111,8 +111,9 @@ async def get_bill_calendar(
     db: AsyncSession = Depends(get_db)
 ):
     """Get bills organized by day for calendar view. month=0 is current, 1 is next, etc."""
-    from datetime import timedelta
+    from datetime import timedelta, date
     import calendar
+    from ..models import Account, AccountType
 
     today = date.today()
     if month == 0:
@@ -126,17 +127,35 @@ async def get_bill_calendar(
     start = date(target_year, target_month, 1)
     end = date(target_year, target_month, days_in_month)
 
+    # 1. Get Static Recurring Bills
     stmt = select(RecurringBill).where(RecurringBill.user_id == current_user.id)
     result = await db.execute(stmt)
     bills = result.scalars().all()
+    
+    # 2. Get Live Credit Card / Loan Balances
+    acc_stmt = select(Account).where(Account.user_id == current_user.id)
+    acc_result = await db.execute(acc_stmt)
+    accounts = acc_result.scalars().all()
+    
+    credit_accounts = {a.name: a for a in accounts if a.type in (AccountType.credit, AccountType.loan) and a.balance > 0}
 
     # Map bills to their due dates within this month
     calendar_data = []
     gap_days = {"monthly": 30, "weekly": 7, "biweekly": 14, "yearly": 365}
 
+    processed_credit_names = set()
+
     for bill in bills:
         due = bill.next_due_date
         gap = gap_days.get(bill.frequency, 30)
+        
+        amount = bill.amount
+        name = bill.name
+        
+        # Link Custom Due Date to Live Balance if names match!
+        if name in credit_accounts:
+            amount = credit_accounts[name].balance
+            processed_credit_names.add(name)
 
         # Find all occurrences of this bill within the target month
         while due < start:
@@ -144,9 +163,27 @@ async def get_bill_calendar(
         while due <= end:
             calendar_data.append({
                 **bill.to_dict(),
+                "name": name,
+                "amount": amount,
                 "dueDate": due.isoformat(),
             })
             due += timedelta(days=gap)
+            
+    # 3. Add Virtual Bills for un-linked Credit Cards (default due date 15th)
+    for name, acc in credit_accounts.items():
+        if name not in processed_credit_names:
+            due_day = min(15, days_in_month) # fallback to 15th
+            due_date = date(target_year, target_month, due_day)
+            
+            calendar_data.append({
+                "id": f"virtual-{acc.id}",
+                "name": f"{name} Payment",
+                "amount": acc.balance,
+                "dueDate": due_date.isoformat(),
+                "frequency": "monthly",
+                "category": "Utilities", # or something distinct
+                "auto_detected": True
+            })
 
     calendar_data.sort(key=lambda x: x["dueDate"])
     return {
@@ -155,3 +192,4 @@ async def get_bill_calendar(
         "bills": calendar_data,
         "totalDue": sum(b["amount"] for b in calendar_data),
     }
+
