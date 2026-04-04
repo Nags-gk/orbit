@@ -74,8 +74,14 @@ export default function Transactions() {
     };
 
     const categories = [...new Set(transactions.map(t => t.category))].sort();
-    const totalIncome = filteredByTab.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    
+    // Logic: Income on a credit card (like paying a bill or a statement credit) 
+    // reduces debt but is not "Real Income" (like a salary). We exclude it from the widget summary so it acts as a Transfer.
+    const isCreditPayment = (t: Transaction) => t.type === 'income' && t.accountType === 'credit';
+    
+    const totalIncome = filteredByTab.filter(t => t.type === 'income' && !isCreditPayment(t)).reduce((s, t) => s + t.amount, 0);
     const totalExpenses = filteredByTab.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
 
     const tabs = [
         { id: 'all', label: 'All Activity' },
