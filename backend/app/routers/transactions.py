@@ -197,25 +197,19 @@ async def get_summary(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Total Balance: Income - Expenses (all time)
-    # Better approach for a banking app would be to sum all transactions.
-    income_result = await db.execute(
-        select(func.sum(Transaction.amount))
-        .where(Transaction.user_id == current_user.id)
-        .where(Transaction.type == TransactionType.income)
+    # Instead of naïve all-time ledger math (which inflates due to credit transfers),
+    # Total Balance mathematically should reflect Net Worth based on current accounts.
+    accounts_result = await db.execute(
+        select(Account).where(Account.user_id == current_user.id)
     )
-    total_income = income_result.scalar() or 0.0
-
-    expense_result = await db.execute(
-        select(func.sum(Transaction.amount))
-        .where(Transaction.user_id == current_user.id)
-        .where(Transaction.type == TransactionType.expense)
-    )
-    total_expenses = expense_result.scalar() or 0.0
+    accounts = accounts_result.scalars().all()
     
-    total_balance = total_income - total_expenses
+    depository = sum(a.balance for a in accounts if a.type == AccountType.depository)
+    investment = sum(a.balance for a in accounts if a.type == AccountType.investment)
+    credit = sum(a.balance for a in accounts if a.type == AccountType.credit)
+    loan = sum(a.balance for a in accounts if a.type == AccountType.loan)
 
-    # Monthly Spending: Expenses in the current month
+    total_balance = (depository + investment) - (credit + loan)
     now = datetime.now()
     start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     
@@ -235,28 +229,16 @@ async def get_summary(
     )
     active_subscriptions = subs_result.scalar() or 0
 
-    # Fetch all accounts to group balances
-    accounts_result = await db.execute(
-        select(Account)
-        .where(Account.user_id == current_user.id)
-    )
-    accounts = accounts_result.scalars().all()
-    
-    depository_balance = sum(a.balance for a in accounts if a.type == AccountType.depository)
-    credit_balance = sum(a.balance for a in accounts if a.type == AccountType.credit)
-    investment_balance = sum(a.balance for a in accounts if a.type == AccountType.investment)
-    loan_balance = sum(a.balance for a in accounts if a.type == AccountType.loan)
-
     return {
         "totalBalance": total_balance,
         "monthlySpending": monthly_spending,
         "activeSubscriptions": active_subscriptions,
         "savingsGoal": 5000.0, # This can be wired up to BudgetGoal later
         "accountsInfo": {
-            "depository": depository_balance,
-            "credit": credit_balance,
-            "investment": investment_balance,
-            "loan": loan_balance
+            "depository": depository,
+            "credit": credit,
+            "investment": investment,
+            "loan": loan
         }
     }
 
