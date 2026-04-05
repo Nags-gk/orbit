@@ -183,9 +183,29 @@ def compare_document_extractions(doc_extractions: list[dict]) -> dict:
 
 def generate_narrative_summary(comparison: dict) -> Optional[str]:
     """
-    Use Gemini to generate a natural language narrative from comparison data.
-    Returns None if API key not available.
+    Use Gemini or Local LLM to generate a natural language narrative from comparison data.
     """
+    prompt = (
+        "You are a financial analyst. Analyze this spending comparison data and write a clear, "
+        "actionable 3-4 paragraph summary highlighting key trends, concerns, and recommendations.\n\n"
+        f"Data: {json.dumps(comparison, indent=2)}\n\n"
+        "Focus on: biggest changes, spending health, and actionable advice."
+    )
+
+    if settings.use_local_llm:
+        try:
+            from openai import OpenAI
+            client = OpenAI(base_url=settings.local_model_url, api_key="local")
+            response = client.chat.completions.create(
+                model=settings.local_model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"Local AI narrative generation failed: {e}")
+            return None
+
     api_key = settings.gemini_api_key
     if not api_key:
         return None
@@ -195,13 +215,6 @@ def generate_narrative_summary(comparison: dict) -> Optional[str]:
         from google.genai import types
         
         client = genai.Client(api_key=api_key)
-        
-        prompt = (
-            "You are a financial analyst. Analyze this spending comparison data and write a clear, "
-            "actionable 3-4 paragraph summary highlighting key trends, concerns, and recommendations.\n\n"
-            f"Data: {json.dumps(comparison, indent=2)}\n\n"
-            "Focus on: biggest changes, spending health, and actionable advice."
-        )
         
         response = client.models.generate_content(
             model="gemini-2.5-flash",

@@ -136,7 +136,9 @@ def _local_analyze_financial_document(file_bytes: bytes, mime_type: str, prompt:
         if not result_content:
             return []
             
-        data = json.loads(result_content)
+        from .local_llm import clean_json_response
+        cleaned_content = clean_json_response(result_content)
+        data = json.loads(cleaned_content)
         # Handle cases where the model wraps it or names it differently
         if "transactions" in data:
             return data["transactions"]
