@@ -67,6 +67,7 @@ export default function BillCalendar() {
             'Food': 'bg-green-500/20 text-green-400 border-green-500/30',
             'Entertainment': 'bg-pink-500/20 text-pink-400 border-pink-500/30',
             'Transport': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+            'Credit Card': 'bg-rose-500/20 text-rose-500 border-rose-500/50 font-bold tracking-wide animate-pulse-slow',
         };
         return colors[cat] || 'bg-secondary text-secondary-foreground border-border';
     };

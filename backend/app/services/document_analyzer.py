@@ -92,41 +92,59 @@ def _local_analyze_financial_document(file_bytes: bytes, mime_type: str, prompt:
     """Execute the document analysis pipeline using a fully local LLM."""
     try:
         from openai import OpenAI
+        import base64
     except ImportError:
         raise RuntimeError("OpenAI python package required for Local LLM processing.")
         
-    # Step 1: Extract text locally since arbitrary local LLMs don't typically support binary blobs easily
-    extracted_text = ""
-    if "pdf" in mime_type.lower():
-        try:
-            with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-                for page in pdf.pages:
-                    text = page.extract_text()
-                    if text:
-                        extracted_text += text + "\n"
-        except Exception as e:
-            raise RuntimeError(f"Failed to read local PDF securely: {e}")
-    else:
-        # Assume plain text or CSV
-        extracted_text = file_bytes.decode('utf-8', errors='ignore')
-
-    if not extracted_text.strip():
-        raise ValueError("Could not extract any readable text from the document.")
-
-    # Step 2: Feed text to Local LLM requesting JSON
     schema_json = ExtractionResult.model_json_schema()
     
-    local_prompt = f"{prompt}\n\nHere is the exact required JSON Schema you MUST return. Do not return markdown, just raw JSON:\n{json.dumps(schema_json)}\n\nDOCUMENT CONTENT:\n{extracted_text}"
-
     client = OpenAI(
         base_url=settings.local_model_url,
         api_key="local"
     )
 
+    is_image = "image" in mime_type.lower()
+
+    if is_image:
+        # Step 1a: Dual-Engine Offload — Route to Vision Model
+        b64_img = base64.b64encode(file_bytes).decode('utf-8')
+        local_prompt = f"{prompt}\n\nHere is the exact REQUIRED JSON Schema you MUST return. Extract all transactions you see in this screenshot:\n{json.dumps(schema_json)}"
+        messages = [{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": local_prompt},
+                {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{b64_img}"}}
+            ]
+        }]
+        # Fuses dynamically or falls back to text model if not set
+        target_model = getattr(settings, "local_vision_model_name", settings.local_model_name)
+    else:
+        # Step 1b: Route to Text Model for PDFs/CSVs
+        extracted_text = ""
+        if "pdf" in mime_type.lower():
+            try:
+                with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+                    for page in pdf.pages:
+                        text = page.extract_text()
+                        if text:
+                            extracted_text += text + "\n"
+            except Exception as e:
+                raise RuntimeError(f"Failed to read local PDF securely: {e}")
+        else:
+            # Assume plain text or CSV
+            extracted_text = file_bytes.decode('utf-8', errors='ignore')
+
+        if not extracted_text.strip():
+            raise ValueError("Could not extract any readable text from the document.")
+
+        local_prompt = f"{prompt}\n\nHere is the exact required JSON Schema you MUST return. Do not return markdown, just raw JSON:\n{json.dumps(schema_json)}\n\nDOCUMENT CONTENT:\n{extracted_text}"
+        messages = [{"role": "user", "content": local_prompt}]
+        target_model = settings.local_model_name
+
     try:
         response = client.chat.completions.create(
-            model=settings.local_model_name,
-            messages=[{"role": "user", "content": local_prompt}],
+            model=target_model,
+            messages=messages,
             temperature=0.1,
             # Response formatting depends on model capability, often forcing JSON is best:
             response_format={"type": "json_object"}

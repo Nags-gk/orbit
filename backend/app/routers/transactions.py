@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..models import Transaction, Subscription, User, TransactionType, TransactionCategory, Account, AccountType
 from ..services.security import get_current_user
+from ..services.credit_sync import sync_credit_card_bill
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, date
@@ -119,6 +120,7 @@ async def create_transaction(
             db.add(account)
 
     await db.commit()
+    await sync_credit_card_bill(db, current_user.id)
     await db.refresh(new_tx)
     return new_tx.to_dict()
 
@@ -156,6 +158,7 @@ async def update_transaction(
     tx.account_id = tx_data.account_id
 
     await db.commit()
+    await sync_credit_card_bill(db, current_user.id)
     await db.refresh(tx)
     return tx.to_dict()
 
@@ -178,6 +181,7 @@ async def delete_transaction(
         
     await db.delete(tx)
     await db.commit()
+    await sync_credit_card_bill(db, current_user.id)
     return {"message": "Transaction deleted successfully"}
 
 @router.get("/subscriptions")

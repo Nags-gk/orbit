@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     use_local_llm: bool = False
     local_model_url: str = "http://localhost:11434/v1"
     local_model_name: str = "llama3.1"
+    local_vision_model_name: str = "llama3.2-vision"
 
     # Database — defaults to local SQLite
     database_url: str = f"sqlite+aiosqlite:///{DB_PATH}"

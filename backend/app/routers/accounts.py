@@ -18,6 +18,7 @@ from datetime import date
 from ..database import get_db
 from ..models import Account, AccountType, NetWorthSnapshot, User
 from ..services.security import get_current_user
+from ..services.credit_sync import sync_credit_card_bill
 
 router = APIRouter(prefix="/api/accounts", tags=["accounts"])
 
@@ -92,6 +93,8 @@ async def create_account(
 
     db.add(new_account)
     await db.commit()
+    if new_account.type == AccountType.credit:
+        await sync_credit_card_bill(db, current_user.id)
     await db.refresh(new_account)
 
     return new_account.to_dict()
@@ -119,6 +122,8 @@ async def update_account(
 
     db.add(account)
     await db.commit()
+    if account.type == AccountType.credit:
+        await sync_credit_card_bill(db, current_user.id)
     await db.refresh(account)
 
     return account.to_dict()
@@ -138,8 +143,12 @@ async def delete_account(
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
 
+    is_credit = account.type == AccountType.credit
     await db.delete(account)
     await db.commit()
+    if is_credit:
+        await sync_credit_card_bill(db, current_user.id)
+        
 
     return {"message": "Account successfully deleted."}
 
