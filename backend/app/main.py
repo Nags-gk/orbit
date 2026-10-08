@@ -11,7 +11,7 @@ from sqlalchemy import select, func
 from .config import get_settings
 from .database import init_db, async_session
 from .models import Transaction, Subscription, TransactionType, TransactionCategory
-from .routers import chat, transactions, analytics, documents, budgets, auth, accounts, bills, goals, reports
+from .routers import transactions, analytics, documents, budgets, auth, accounts, bills, goals, reports
 from fastapi.staticfiles import StaticFiles
 import os
 
@@ -47,7 +47,6 @@ app.add_middleware(
 
 # Routers
 app.include_router(auth.router)
-app.include_router(chat.router)
 app.include_router(transactions.router)
 app.include_router(analytics.router)
 app.include_router(documents.router)

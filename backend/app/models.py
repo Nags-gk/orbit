@@ -34,12 +34,6 @@ class TransactionCategory(str, enum.Enum):
     Subscription = "Subscription"
 
 
-class MessageRole(str, enum.Enum):
-    user = "user"
-    assistant = "assistant"
-    system = "system"
-
-
 # ── Helper ─────────────────────────────────────────────────
 
 def _uuid() -> str:
@@ -60,7 +54,6 @@ class User(Base):
 
     transactions: Mapped[List["Transaction"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     subscriptions: Mapped[List["Subscription"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    conversations: Mapped[List["Conversation"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     budget_goals: Mapped[List["BudgetGoal"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     documents: Mapped[List["Document"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     accounts: Mapped[List["Account"]] = relationship(back_populates="user", cascade="all, delete-orphan")
@@ -158,41 +151,9 @@ class Subscription(Base):
         }
 
 
-class Conversation(Base):
-    __tablename__ = "conversations"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    title: Mapped[str] = mapped_column(String(255), default="New Chat")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    user: Mapped["User"] = relationship(back_populates="conversations")
-    messages: Mapped[List["Message"]] = relationship(back_populates="conversation", cascade="all, delete-orphan", order_by="Message.created_at")
-
-
-class Message(Base):
-    __tablename__ = "messages"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    conversation_id: Mapped[str] = mapped_column(ForeignKey("conversations.id", ondelete="CASCADE"))
-    role: Mapped[MessageRole] = mapped_column(SAEnum(MessageRole))
-    content: Mapped[str] = mapped_column(Text)
-    tool_calls: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string of tool calls
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
-    conversation: Mapped["Conversation"] = relationship(back_populates="messages")
-
-    def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "role": self.role.value,
-            "content": self.content,
-            "toolCalls": self.tool_calls,
-            "createdAt": self.created_at.isoformat(),
-        }
+# Conversation and Message moved to Orbit Copilot (github.com/Nags-gk/Orbit-Copilot),
+# which keeps chat history in its own database. Existing conversations/messages
+# tables in orbit.db are left in place and are no longer read or written here.
 
 
 class BudgetGoal(Base):
