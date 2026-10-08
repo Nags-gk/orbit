@@ -13,7 +13,9 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from .local_llm import settings
+from ..config import get_settings
+
+settings = get_settings()
 
 # Structured Output Schema for Gemini and Local LLM
 class TransactionExtraction(BaseModel):
@@ -154,7 +156,7 @@ def _local_analyze_financial_document(file_bytes: bytes, mime_type: str, prompt:
         if not result_content:
             return []
             
-        from .local_llm import clean_json_response
+        from .llm_utils import clean_json_response
         cleaned_content = clean_json_response(result_content)
         data = json.loads(cleaned_content)
         # Handle cases where the model wraps it or names it differently

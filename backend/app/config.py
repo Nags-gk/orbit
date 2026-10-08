@@ -9,9 +9,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "orbit.db")
 
 class Settings(BaseSettings):
-    # Anthropic API
-    anthropic_api_key: str = ""
-
     # Gemini API
     gemini_api_key: str = ""
 
@@ -24,14 +21,12 @@ class Settings(BaseSettings):
     # Database — defaults to local SQLite
     database_url: str = f"sqlite+aiosqlite:///{DB_PATH}"
 
-    # Models
-    default_model: str = "claude-sonnet-4-20250514"
-    opus_model: str = "claude-opus-4-20250514"
-
     # CORS
     frontend_url: str = "http://localhost:5173"
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    # Ignore unknown keys so an existing .env that still sets copilot-only
+    # values (ANTHROPIC_API_KEY, model names) keeps working after the split.
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 @lru_cache()

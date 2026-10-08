@@ -1,12 +1,18 @@
 fastapi==0.115.12
 uvicorn[standard]==0.34.3
-websockets==15.0.1
-anthropic==0.52.0
 sqlalchemy==2.0.41
 aiosqlite==0.21.0
+greenlet==3.2.5
 python-dotenv==1.1.0
 pydantic-settings==2.9.1
-greenlet==3.2.5
 pdfplumber==0.11.6
 python-multipart==0.0.20
-openai==1.54.3
+python-dateutil==2.9.0.post0
+email-validator==2.2.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+# passlib 1.7.4 breaks on bcrypt>=4.1 (missing __about__, then 72-byte errors).
+bcrypt==4.0.1
+google-genai==1.20.0
+# openai<1.55.3 passes `proxies=` to httpx, which httpx 0.28 (needed by google-genai) removed.
+openai==1.82.0

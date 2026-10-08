@@ -9,7 +9,9 @@ import os
 import json
 from collections import defaultdict
 from typing import Optional
-from .local_llm import settings
+from ..config import get_settings
+
+settings = get_settings()
 
 
 def compare_document_extractions(doc_extractions: list[dict]) -> dict:
