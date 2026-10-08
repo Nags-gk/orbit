@@ -8,7 +8,10 @@ Orbit follows a decoupled client-server architecture.
 
 1.  **Frontend Client**: React 18 SPA (Single Page Application) built with Vite. It functions as a PWA, storing app state logically in local storage using Zustand. 
 2.  **Backend API**: A Python FastAPI server providing REST endpoints. It manages the SQLite database asynchronously with SQLAlchemy 2.0.
-3.  **AI Engine**: The FastAPI server interacts with the Google Gemini API to process documents and power the conversational agent.
+3.  **AI Engine**: The FastAPI server uses Gemini or a local model to parse statements, categorize transactions and compare documents.
+4.  **Orbit Copilot** (separate repo, [Nags-gk/Orbit-Copilot](https://github.com/Nags-gk/Orbit-Copilot)): the conversational agent. It runs its own FastAPI service on port 8001 and reads and writes five Orbit tables (users, transactions, accounts, subscriptions, documents) through a fixed mapping, while keeping chat history in its own database. Orbit renders its chat widget, vendored under `src/vendor/orbit-copilot/` (refresh with `scripts/sync-copilot-widget.sh`).
+
+> **Data contract:** if you change a column in `users`, `transactions`, `accounts`, `subscriptions` or `documents`, update `orbit_copilot/models/orbit.py` in Orbit-Copilot in the same release.
 
 ---
 
@@ -17,7 +20,8 @@ Orbit follows a decoupled client-server architecture.
 The frontend is highly modularized under `src/`:
 
 *   `/components`: Reusable UI elements (`/ui` for primitives via shadcn/ui logic, and domain-specific folders like `/transactions`, `/dashboard`, `/chat`).
-*   `/hooks`: Custom React hooks, including `.useChat` and `.useNotifications`.
+*   `/hooks`: Custom React hooks, including `.useNotifications`.
+*   `/vendor/orbit-copilot`: The copilot chat widget, copied from Orbit-Copilot. Don't edit it here.
 *   `/lib`: Core utilities (API fetch wrappers, theme parsing, formatting functions).
 *   `/store`: Zustand state management for local persistence.
 
@@ -32,7 +36,7 @@ We use **Zustand** for global state. Instead of refetching data constantly, the 
 
 Located in `/backend/app`, the server strictly follows domain-driven structure:
 
-*   `/routers`: FastAPI route declarations (`transactions.py`, `auth.py`, `chat.py`, `documents.py`).
+*   `/routers`: FastAPI route declarations (`transactions.py`, `auth.py`, `documents.py`, …).
 *   `/services`: Business logic (e.g., `ai_doc.py` containing the Gemini integration code).
 *   `/models.py`: SQLAlchemy database models.
 *   `/schemas.py`: Pydantic models for strict data validation (Input/Output schemas).
@@ -43,9 +47,7 @@ Located in `/backend/app`, the server strictly follows domain-driven structure:
     *   The frontend posts a raw file (PDF/Image/CSV) as a binary payload.
     *   FastAPI routes it to the `ai_doc` service.
     *   The service wraps the file in a multimodal prompt and sends it to the Gemini API with instructions to return a structured JSON array of matching Pydantic Transaction objects.
-2.  **Conversational Agent** (`POST /api/chat`)
-    *   Requests contain User prompt + context (last 50 transactions, active accounts).
-    *   Gemini API returns conversational text. It also has access to function calling capabilities (e.g., executing a command to "Add Transaction").
+2.  **Conversational Agent**: moved to Orbit-Copilot. See its [architecture doc](https://github.com/Nags-gk/Orbit-Copilot/blob/main/docs/ARCHITECTURE.md).
 
 ---
 

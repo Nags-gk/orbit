@@ -16,6 +16,8 @@ Unlike traditional budgeting apps that rely on tedious manual entry, **Orbit** u
 
 Simply drop your bank statements into the app and let the AI autonomously categorize your spending, mathematically forecast your trajectory, and instantly answer complex financial questions over live voice chat. 
 
+> 🤖 **The AI copilot now lives in its own repo:** [**Orbit-Copilot**](https://github.com/Nags-gk/Orbit-Copilot) runs the chat assistant as a separate service on port 8001. Orbit renders its chat bubble and shares its database through a fixed table contract. Check both repos out side by side and `./launch.sh` starts all three servers.
+
 > 🔒 **Privacy First:** Orbit supports 100% offline local AI mode natively. Connect it to Ollama or LM Studio, ensuring your sensitive financial data *never* leaves your machine.
 
 ---
@@ -59,7 +61,9 @@ chmod +x build.sh launch.sh
 ./build.sh
 ./launch.sh
 ```
-*Frontend runs at `http://localhost:4173`, Backend runs at `http://localhost:8000`.*
+*Frontend runs at `http://localhost:4173`, Backend runs at `http://localhost:8000`, Copilot (if checked out at `../orbit-copilot`) at `http://localhost:8001`.*
+
+To point the chat bubble at a copilot running elsewhere, set `VITE_COPILOT_WS_URL` (e.g. `wss://copilot.example.com/api/chat/ws`) before `npm run build`.
 </details>
 
 <details>
