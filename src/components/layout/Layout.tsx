@@ -3,7 +3,16 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { BottomNav } from './BottomNav';
-import { ChatAssistant } from '../ai/ChatAssistant';
+import { ChatAssistant } from '../../vendor/orbit-copilot';
+import { useAuthStore } from '../../store/authStore';
+
+// The copilot runs as its own service (github.com/Nags-gk/Orbit-Copilot) on port 8001.
+// Default to the host this page was loaded from, so phones on the local network reach it too.
+const COPILOT_WS_URL =
+    import.meta.env.VITE_COPILOT_WS_URL ||
+    `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8001/api/chat/ws`;
+
+const getToken = () => useAuthStore.getState().token;
 
 export function Layout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -21,8 +30,7 @@ export function Layout() {
             </div>
 
             <BottomNav />
-            <ChatAssistant />
+            <ChatAssistant wsUrl={COPILOT_WS_URL} getToken={getToken} />
         </div>
     );
 }
-
